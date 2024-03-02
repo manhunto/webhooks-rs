@@ -1,12 +1,7 @@
 name: Clippy check
-
-on:
-  push:
-  pull_request:
-
+on: [pull_request, push]
 env:
   RUSTFLAGS: "-Dwarnings"
-
 jobs:
   clippy_check:
     runs-on: ubuntu-latest
