@@ -1,0 +1,9 @@
+name: Conventional Commits
+on: [pull_request, push]
+jobs:
+  build:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: webiny/action-conventional-commits@v1.3.0
