@@ -4,7 +4,7 @@ alias r := run
 alias rr := run-release
 
 default:
-  @just --list
+    @just --list
 
 build:
     cargo build
