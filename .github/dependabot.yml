@@ -11,7 +11,7 @@ updates:
       - manhunto
     labels:
       - dependencies
-  - package-ecosystem: cargo
+  - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: daily
