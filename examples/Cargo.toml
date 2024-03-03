@@ -1,0 +1,11 @@
+[package]
+name = "webhooks_examples"
+version = "0.1.0"
+edition = "2021"
+
+[[example]]
+name = "destination-server"
+path = "src/destination-server/main.rs"
+
+[dependencies]
+rand = { version = "0.8.4", features = [] }
