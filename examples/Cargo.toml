@@ -10,4 +10,3 @@ path = "src/destination-server/main.rs"
 [dependencies]
 rand = { version = "0.8.4", features = [] }
 actix-web = "4"
-env_logger = "0.11.2"
