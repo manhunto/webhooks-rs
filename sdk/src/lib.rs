@@ -1,6 +1,7 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use uuid::Uuid;
 
 pub struct WebhooksSDK {
     api_url: String,
@@ -52,7 +53,7 @@ struct Application {
 
 #[derive(Deserialize)]
 struct App {
-    id: String,
+    id: Uuid,
     name: String,
 }
 
