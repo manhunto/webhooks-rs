@@ -1,0 +1,9 @@
+@url = http://localhost:8090
+
+### Create application
+POST {{url}}/api/v1/application
+Content-Type: application/json
+
+{
+  "name": "Dummy application"
+}

@@ -1,17 +1,21 @@
-use actix_web::web::Data;
+use actix_web::web::{Data, Json};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 struct Application {
-    #[allow(dead_code)]
     id: Uuid,
+    name: String,
 }
 
 impl Application {
-    fn new() -> Self {
-        Self { id: Uuid::new_v4() }
+    fn new(name: String) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            name,
+        }
     }
 }
 
@@ -39,8 +43,31 @@ impl Storage {
     }
 }
 
-async fn create_application(storage: Data<Storage>) -> impl Responder {
-    let app = Application::new();
+#[derive(Deserialize)]
+struct CreateAppRequest {
+    name: String,
+}
+
+#[derive(Serialize)]
+struct CreateAppResponse {
+    id: String,
+    name: String,
+}
+
+impl From<Application> for CreateAppResponse {
+    fn from(value: Application) -> Self {
+        Self {
+            id: value.id.to_string(),
+            name: value.name,
+        }
+    }
+}
+
+async fn create_application(
+    storage: Data<Storage>,
+    request: Json<CreateAppRequest>,
+) -> impl Responder {
+    let app = Application::new(request.name.to_string());
 
     storage.add_application(app.clone());
 
@@ -50,7 +77,9 @@ async fn create_application(storage: Data<Storage>) -> impl Responder {
         storage.application_count()
     );
 
-    HttpResponse::NoContent()
+    let response = CreateAppResponse::from(app);
+
+    HttpResponse::Created().json(response)
 }
 
 #[actix_web::main]
