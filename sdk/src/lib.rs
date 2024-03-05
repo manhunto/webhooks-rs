@@ -61,10 +61,8 @@ impl Application {
         let body = json!({
             "name": name,
         });
-        let url = "v1/application";
-        let app: App = self.client.post(url.to_string(), body).await;
 
-        app
+        self.client.post("v1/application".to_string(), body).await
     }
 }
 
