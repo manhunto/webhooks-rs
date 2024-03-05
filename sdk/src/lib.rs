@@ -51,7 +51,7 @@ struct Application {
     client: Client,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug, PartialEq)]
 struct App {
     id: Uuid,
     name: String,
@@ -66,5 +66,45 @@ impl Application {
         let app: App = self.client.post(url.to_string(), body).await;
 
         app
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{App, WebhooksSDK};
+    use mockito::Matcher::Json;
+    use serde_json::json;
+    use uuid::uuid;
+
+    #[tokio::test]
+    async fn create_application() {
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+
+        let mock = server
+            .mock("POST", "/v1/application")
+            .match_body(Json(json!({"name": "dummy application"})))
+            .with_body(
+                r#"{"id":"78986a6c-b1ba-4729-8fae-b080e5f91551","name":"dummy application"}"#,
+            )
+            .with_header("content-type", "application/json")
+            .with_status(201)
+            .create_async()
+            .await;
+
+        let app = WebhooksSDK::new(url)
+            .application()
+            .create("dummy application".to_string())
+            .await;
+
+        mock.assert_async().await;
+
+        assert_eq!(
+            App {
+                id: uuid!("78986a6c-b1ba-4729-8fae-b080e5f91551"),
+                name: "dummy application".to_string()
+            },
+            app
+        );
     }
 }
