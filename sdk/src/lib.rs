@@ -8,12 +8,11 @@ pub struct WebhooksSDK {
 }
 
 impl WebhooksSDK {
-    #[allow(dead_code)]
-    fn new(api_url: String) -> Self {
+    pub fn new(api_url: String) -> Self {
         Self { api_url }
     }
 
-    fn application(&self) -> Application {
+    pub fn application(&self) -> Application {
         Application {
             client: Client::new(self.api_url.to_string()),
         }
@@ -47,12 +46,12 @@ impl Client {
     }
 }
 
-struct Application {
+pub struct Application {
     client: Client,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
-struct App {
+pub struct App {
     id: Uuid,
     name: String,
 }
