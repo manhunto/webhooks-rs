@@ -9,5 +9,5 @@ name = "destination-server"
 path = "src/destination-server/main.rs"
 
 [dependencies]
-rand = { version = "0.8.4", features = [] }
+rand = "0.8.4"
 actix-web = "4"
