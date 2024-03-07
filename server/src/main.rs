@@ -6,19 +6,39 @@ use log4rs::config::{Appender, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use log4rs::Config;
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use std::sync::Mutex;
-use uuid::Uuid;
+use svix_ksuid::*;
+
+#[derive(Debug, Clone)]
+struct ApplicationId {
+    id: String,
+}
+
+impl ApplicationId {
+    fn new() -> Self {
+        Self {
+            id: format!("app_{}", Ksuid::new(None, None)),
+        }
+    }
+}
+
+impl Display for ApplicationId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.id)
+    }
+}
 
 #[derive(Debug, Clone)]
 struct Application {
-    id: Uuid,
+    id: ApplicationId,
     name: String,
 }
 
 impl Application {
     fn new(name: String) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: ApplicationId::new(),
             name,
         }
     }

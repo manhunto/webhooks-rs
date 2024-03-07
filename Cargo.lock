@@ -292,6 +292,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "base-encode"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a17bd29f7c70f32e9387f4d4acfa5ea7b7749ef784fb78cf382df97069337b8c"
+
+[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -344,6 +350,12 @@ name = "bumpalo"
 version = "3.15.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ea184aa71bb362a1157c896979544cc23974e08fd265f29ea96b59f0b4a555b"
+
+[[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
@@ -1499,7 +1511,7 @@ dependencies = [
  "log4rs",
  "serde",
  "serde_json",
- "uuid",
+ "svix-ksuid",
 ]
 
 [[package]]
@@ -1551,6 +1563,19 @@ checksum = "05ffd9c0a93b7543e062e759284fcf5f5e3b098501104bfbdde4d404db792871"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "svix-ksuid"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66f014385b7fc154f59e9480770c2187b6e61037c2439895788a9a4d421d7859"
+dependencies = [
+ "base-encode",
+ "byteorder",
+ "getrandom",
+ "serde",
+ "time",
 ]
 
 [[package]]
@@ -1844,7 +1869,6 @@ version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f00cc9702ca12d3c81455259621e676d0f7251cec66a21e98fe2e9a37db93b2a"
 dependencies = [
- "getrandom",
  "serde",
 ]
 
