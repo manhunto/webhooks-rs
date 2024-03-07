@@ -1,5 +1,9 @@
 use actix_web::web::{Data, Json};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use log::{debug, LevelFilter};
+use log4rs::append::console::ConsoleAppender;
+use log4rs::config::{Appender, Root};
+use log4rs::Config;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -71,7 +75,7 @@ async fn create_application(
 
     storage.add_application(app.clone());
 
-    println!(
+    debug!(
         "Application created: {:?}, count: {}",
         app,
         storage.application_count()
@@ -84,10 +88,12 @@ async fn create_application(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    init_log();
+
     let ip = "127.0.0.1";
     let port = 8090;
 
-    println!(
+    debug!(
         "Webhooks server is listening for requests on {}:{}",
         ip, port
     );
@@ -102,4 +108,14 @@ async fn main() -> std::io::Result<()> {
     .bind((ip, port))?
     .run()
     .await
+}
+
+fn init_log() {
+    let stdout = ConsoleAppender::builder().build();
+    let config = Config::builder()
+        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .build(Root::builder().appender("stdout").build(LevelFilter::Debug))
+        .unwrap();
+
+    log4rs::init_config(config).unwrap();
 }
