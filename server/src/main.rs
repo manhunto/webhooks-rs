@@ -3,6 +3,7 @@ use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use log::{debug, LevelFilter};
 use log4rs::append::console::ConsoleAppender;
 use log4rs::config::{Appender, Root};
+use log4rs::encode::pattern::PatternEncoder;
 use log4rs::Config;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
@@ -111,7 +112,11 @@ async fn main() -> std::io::Result<()> {
 }
 
 fn init_log() {
-    let stdout = ConsoleAppender::builder().build();
+    let stdout = ConsoleAppender::builder()
+        .encoder(Box::new(PatternEncoder::new(
+            "{d(%+)(utc)} [{f}:{L}] {h({l})} {M}:{m}{n}",
+        )))
+        .build();
     let config = Config::builder()
         .appender(Appender::builder().build("stdout", Box::new(stdout)))
         .build(Root::builder().appender("stdout").build(LevelFilter::Debug))
