@@ -1,6 +1,5 @@
 use actix_web::web::{Data, Json};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use derive::Ksuid as KsuidDerive;
 use log::{debug, LevelFilter};
 use log4rs::append::console::ConsoleAppender;
 use log4rs::config::{Appender, Root};
@@ -11,7 +10,7 @@ use std::fmt::{Display, Formatter};
 use std::sync::Mutex;
 use svix_ksuid::{Ksuid, KsuidLike};
 
-#[derive(Debug, Clone, KsuidDerive)]
+#[derive(Debug, Clone, derive::Ksuid)]
 #[prefix = "app"]
 struct ApplicationId {
     id: String,
