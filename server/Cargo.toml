@@ -13,3 +13,4 @@ futures = "0.3"
 log = "0.4.21"
 log4rs = "1.3.0"
 svix-ksuid = { version = "^0.8.0", features = ["serde"] }
+derive = { path = "../derive" }
