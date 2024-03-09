@@ -1,7 +1,6 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use uuid::Uuid;
 
 pub struct WebhooksSDK {
     api_url: String,
@@ -52,7 +51,7 @@ pub struct Application {
 
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct App {
-    id: Uuid,
+    id: String,
     name: String,
 }
 
@@ -71,7 +70,6 @@ mod tests {
     use crate::{App, WebhooksSDK};
     use mockito::Matcher::Json;
     use serde_json::json;
-    use uuid::uuid;
 
     #[tokio::test]
     async fn create_application() {
@@ -81,9 +79,7 @@ mod tests {
         let mock = server
             .mock("POST", "/v1/application")
             .match_body(Json(json!({"name": "dummy application"})))
-            .with_body(
-                r#"{"id":"78986a6c-b1ba-4729-8fae-b080e5f91551","name":"dummy application"}"#,
-            )
+            .with_body(r#"{"id":"app_2dSZgxc6qw0vR7hwZVXDJFleRXj","name":"dummy application"}"#)
             .with_header("content-type", "application/json")
             .with_status(201)
             .create_async()
@@ -98,7 +94,7 @@ mod tests {
 
         assert_eq!(
             App {
-                id: uuid!("78986a6c-b1ba-4729-8fae-b080e5f91551"),
+                id: "app_2dSZgxc6qw0vR7hwZVXDJFleRXj".to_string(),
                 name: "dummy application".to_string()
             },
             app
