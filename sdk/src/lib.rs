@@ -1,38 +1,40 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::str::FromStr;
+use url::Url;
 
 pub struct WebhooksSDK {
-    api_url: String,
+    api_url: Url,
 }
 
 impl WebhooksSDK {
-    pub fn new(api_url: String) -> Self {
+    pub fn new(api_url: Url) -> Self {
         Self { api_url }
     }
 
     pub fn application(&self) -> Application {
         Application {
-            client: Client::new(self.api_url.to_string()),
+            client: Client::new(self.api_url.clone()),
         }
     }
 }
 
 struct Client {
-    api_url: String,
+    api_url: Url,
 }
 
 impl Client {
-    fn new(api_url: String) -> Self {
+    fn new(api_url: Url) -> Self {
         Self { api_url }
     }
 
-    async fn post<I, O>(&self, url: String, body: I) -> O
+    async fn post<I, O>(&self, endpoint: EndpointUrl, body: I) -> O
     where
         I: Serialize,
         O: DeserializeOwned,
     {
-        let url = format!("{}/{}", self.api_url, url);
+        let url = self.api_url.join(endpoint.as_str()).expect("Invalid url");
 
         let response = reqwest::Client::new()
             .post(url)
@@ -49,6 +51,36 @@ pub struct Application {
     client: Client,
 }
 
+#[derive(Debug)]
+struct EndpointUrl {
+    path: Url,
+}
+
+impl EndpointUrl {
+    #[must_use]
+    fn new(path: String) -> Self {
+        let url = Url::from_directory_path(path).expect("Invalid endpoint url");
+
+        if url.has_host() {
+            panic!("Endpoint url should not have host")
+        }
+
+        Self { path: url }
+    }
+
+    fn as_str(&self) -> &str {
+        self.path.as_str()
+    }
+}
+
+impl FromStr for EndpointUrl {
+    type Err = Self;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::new(s.to_string()))
+    }
+}
+
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct App {
     id: String,
@@ -61,7 +93,9 @@ impl Application {
             "name": name,
         });
 
-        self.client.post("v1/application".to_string(), body).await
+        self.client
+            .post(EndpointUrl::from_str("v1/application").unwrap(), body)
+            .await
     }
 }
 
