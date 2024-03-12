@@ -10,8 +10,10 @@ pub struct WebhooksSDK {
 }
 
 impl WebhooksSDK {
-    pub fn new(api_url: Url) -> Self {
-        Self { api_url }
+    pub fn new(api_url: String) -> Self {
+        Self {
+            api_url: Url::parse(api_url.as_str()).unwrap(),
+        }
     }
 
     pub fn application(&self) -> Application {
@@ -101,12 +103,11 @@ mod tests {
     use crate::{App, WebhooksSDK};
     use mockito::Matcher::Json;
     use serde_json::json;
-    use url::Url;
 
     #[tokio::test]
     async fn create_application() {
         let mut server = mockito::Server::new_async().await;
-        let url = Url::parse(server.url().as_str()).unwrap();
+        let url = server.url();
 
         let mock = server
             .mock("POST", "/v1/application")
