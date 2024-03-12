@@ -1,6 +1,7 @@
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 
@@ -53,23 +54,19 @@ pub struct Application {
 
 #[derive(Debug)]
 struct EndpointUrl {
-    path: Url,
+    path: PathBuf,
 }
 
 impl EndpointUrl {
     #[must_use]
     fn new(path: String) -> Self {
-        let url = Url::from_directory_path(path).expect("Invalid endpoint url");
+        let path_buf = PathBuf::from(path);
 
-        if url.has_host() {
-            panic!("Endpoint url should not have host")
-        }
-
-        Self { path: url }
+        Self { path: path_buf }
     }
 
     fn as_str(&self) -> &str {
-        self.path.as_str()
+        self.path.to_str().unwrap()
     }
 }
 
@@ -104,11 +101,12 @@ mod tests {
     use crate::{App, WebhooksSDK};
     use mockito::Matcher::Json;
     use serde_json::json;
+    use url::Url;
 
     #[tokio::test]
     async fn create_application() {
         let mut server = mockito::Server::new_async().await;
-        let url = server.url();
+        let url = Url::parse(server.url().as_str()).unwrap();
 
         let mock = server
             .mock("POST", "/v1/application")
