@@ -111,7 +111,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(storage.clone())
-            .route("/api/v1/application", web::post().to(create_application))
+            .route("v1/application", web::post().to(create_application))
     })
     .bind((ip, port))?
     .run()
