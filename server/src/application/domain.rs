@@ -9,8 +9,8 @@ pub struct ApplicationId {
 
 #[derive(Debug, Clone)]
 pub struct Application {
-    pub(crate) id: ApplicationId,
-    pub(crate) name: String,
+    pub id: ApplicationId,
+    pub name: String,
 }
 
 impl Application {
