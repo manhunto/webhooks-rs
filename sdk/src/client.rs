@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use url::Url;
 
+#[derive(Clone)]
 pub struct Client {
     api_url: Url,
 }

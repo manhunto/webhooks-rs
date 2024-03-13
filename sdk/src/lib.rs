@@ -6,17 +6,19 @@ use client::Client;
 use url::Url;
 
 pub struct WebhooksSDK {
-    api_url: Url,
+    client: Client,
 }
 
 impl WebhooksSDK {
     pub fn new(api_url: String) -> Self {
+        let url = Url::parse(api_url.as_str()).unwrap();
+
         Self {
-            api_url: Url::parse(api_url.as_str()).unwrap(),
+            client: Client::new(url),
         }
     }
 
     pub fn application(&self) -> Application {
-        Application::new(Client::new(self.api_url.clone()))
+        Application::new(self.client.clone())
     }
 }
