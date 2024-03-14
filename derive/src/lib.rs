@@ -32,6 +32,9 @@ pub fn derive_ksuid_impl(item: TokenStream) -> TokenStream {
     };
 
     let gen = quote! {
+        use svix_ksuid::{Ksuid, KsuidLike};
+        use itertools::Itertools;
+
         impl #name {
             fn new() -> Self {
                 Self {

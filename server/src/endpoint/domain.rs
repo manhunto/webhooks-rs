@@ -1,7 +1,5 @@
 use crate::application::domain::ApplicationId;
-use itertools::Itertools;
 use std::fmt::{Display, Formatter};
-use svix_ksuid::{Ksuid, KsuidLike};
 use url::Url;
 
 #[derive(Debug, Clone, derive::Ksuid)]

@@ -1,6 +1,4 @@
-use itertools::Itertools;
 use std::fmt::{Display, Formatter};
-use svix_ksuid::{Ksuid, KsuidLike};
 
 #[derive(Debug, Clone, derive::Ksuid)]
 #[prefix = "app"]
