@@ -10,23 +10,6 @@ pub struct EndpointId {
     id: String,
 }
 
-impl TryFrom<String> for EndpointId {
-    type Error = String;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        let (prefix, _) = value.split_terminator('_').collect_tuple().unwrap();
-
-        if prefix != "ep" {
-            return Err(format!(
-                "{} should have prefix {} but have {}",
-                "Endpoint", "ep", prefix,
-            ));
-        }
-
-        Ok(EndpointId { id: value })
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Endpoint {
     pub id: EndpointId,

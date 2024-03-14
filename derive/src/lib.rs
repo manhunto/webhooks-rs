@@ -7,6 +7,8 @@ pub fn derive_ksuid_impl(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
 
     let name = &input.ident;
+    let name_str = name.to_string();
+
     let attrs: Vec<&Attribute> = input
         .attrs
         .iter()
@@ -43,6 +45,24 @@ pub fn derive_ksuid_impl(item: TokenStream) -> TokenStream {
                 write!(f, "{}", self.id)
             }
         }
+
+        impl TryFrom<String> for #name {
+            type Error = String;
+
+            fn try_from(value: String) -> Result<Self, Self::Error> {
+                let (prefix, _) = value.split_terminator('_').collect_tuple().unwrap();
+
+                if prefix != #prefix {
+                    return Err(format!(
+                        "{} should have prefix {} but have {}",
+                        #name_str, #prefix, prefix,
+                    ));
+                }
+
+                Ok(Self { id: value })
+            }
+        }
+
     };
     gen.into()
 }
