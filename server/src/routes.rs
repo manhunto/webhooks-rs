@@ -1,6 +1,14 @@
-use crate::application::handlers::create_handler;
+use crate::application::handlers::create_application_handler;
+use crate::endpoint::handlers::create_endpoint_handler;
 use actix_web::web;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/v1").route("/application", web::post().to(create_handler)));
+    cfg.service(
+        web::scope("/v1")
+            .route("/application", web::post().to(create_application_handler))
+            .route(
+                "/application/{app_id}/endpoint",
+                web::post().to(create_endpoint_handler),
+            ),
+    );
 }

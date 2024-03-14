@@ -5,7 +5,7 @@ use actix_web::web::{Data, Json};
 use actix_web::{HttpResponse, Responder};
 use log::debug;
 
-pub async fn create_handler(
+pub async fn create_application_handler(
     storage: Data<Storage>,
     request: Json<CreateAppRequest>,
 ) -> impl Responder {

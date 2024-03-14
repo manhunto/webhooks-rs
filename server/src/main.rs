@@ -1,4 +1,5 @@
 mod application;
+mod endpoint;
 mod logs;
 mod routes;
 mod storage;

@@ -7,3 +7,15 @@ Content-Type: application/json
 {
   "name": "Dummy application"
 }
+
+> {%
+    client.global.set("app_id", response.body.id);
+%}
+
+### Create endpoint
+POST {{url}}/v1/application/{{app_id}}/endpoint
+Content-Type: application/json
+
+{
+  "url": "http://localhost:8080"
+}
