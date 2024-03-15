@@ -1,5 +1,4 @@
-use crate::application::handlers::create_application_handler;
-use crate::endpoint::handlers::create_endpoint_handler;
+use crate::configuration::handlers::{create_application_handler, create_endpoint_handler};
 use actix_web::web;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {

@@ -1,5 +1,6 @@
-use crate::application::storage::{ApplicationStorage, InMemoryApplicationStorage};
-use crate::endpoint::storage::{EndpointStorage, InMemoryEndpointStorage};
+use crate::configuration::storage::{
+    ApplicationStorage, EndpointStorage, InMemoryApplicationStorage, InMemoryEndpointStorage,
+};
 
 pub struct Storage {
     pub applications: Box<dyn ApplicationStorage + Sync + Send>,

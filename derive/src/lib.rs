@@ -32,11 +32,10 @@ pub fn derive_ksuid_impl(item: TokenStream) -> TokenStream {
     };
 
     let gen = quote! {
-        use svix_ksuid::{Ksuid, KsuidLike};
-        use itertools::Itertools;
-
         impl #name {
             fn new() -> Self {
+                use svix_ksuid::{Ksuid, KsuidLike};
+
                 Self {
                     id: format!("{}_{}", #prefix, Ksuid::new(None, None)),
                 }
@@ -53,6 +52,8 @@ pub fn derive_ksuid_impl(item: TokenStream) -> TokenStream {
             type Error = String;
 
             fn try_from(value: String) -> Result<Self, Self::Error> {
+                use itertools::Itertools;
+
                 let (prefix, _) = value.split_terminator('_').collect_tuple().unwrap();
 
                 if prefix != #prefix {
