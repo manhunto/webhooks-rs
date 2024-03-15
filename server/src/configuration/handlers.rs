@@ -1,4 +1,4 @@
-use crate::configuration::domain::{Application, ApplicationId, Endpoint};
+use crate::configuration::domain::{Application, ApplicationId, Endpoint, Topic};
 use crate::configuration::models::{
     CreateAppRequest, CreateAppResponse, CreateEndpointRequest, CreateEndpointResponse,
 };
@@ -34,10 +34,15 @@ pub async fn create_endpoint_handler(
     let app_id = path.into_inner();
     // todo check if app exists
 
-    let endpoint = Endpoint::new(
-        request.url.clone(),
-        ApplicationId::try_from(app_id).unwrap(),
-    );
+    let url = request.url.clone();
+    let topics = request
+        .topics
+        .clone()
+        .into_iter()
+        .map(|t| Topic::new(t).unwrap()) // todo handle error
+        .collect();
+
+    let endpoint = Endpoint::new(url, ApplicationId::try_from(app_id).unwrap(), topics);
 
     storage.endpoints.save(endpoint.clone());
 

@@ -17,5 +17,9 @@ POST {{url}}/v1/application/{{app_id}}/endpoint
 Content-Type: application/json
 
 {
-  "url": "http://localhost:8080"
+  "url": "http://localhost:8080",
+  "topics": [
+    "contact.updated",
+    "contact.created"
+  ]
 }

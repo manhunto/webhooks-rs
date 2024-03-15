@@ -16,3 +16,5 @@ svix-ksuid = { version = "^0.8.0", features = ["serde"] }
 derive = { path = "../derive" }
 url = "2.5.0"
 itertools = "0.12.1"
+regex = "1.10.3"
+lazy_static = "1.4.0"
