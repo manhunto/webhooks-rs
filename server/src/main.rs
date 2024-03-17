@@ -1,5 +1,6 @@
 mod configuration;
 mod error;
+mod events;
 mod logs;
 mod routes;
 mod storage;

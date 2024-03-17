@@ -23,3 +23,13 @@ Content-Type: application/json
     "contact.created"
   ]
 }
+
+### Create message
+POST {{url}}/v1/application/{{app_id}}/message
+Content-Type: application/json
+
+{
+  "payload": {
+    "foo": "bar"
+  }
+}
