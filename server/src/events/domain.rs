@@ -1,7 +1,7 @@
 use crate::configuration::domain::ApplicationId;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)] // todo remove me soon
 pub struct Payload {
     body: String,
@@ -19,7 +19,7 @@ struct MessageId {
     id: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)] // todo remove me soon
 pub struct Message {
     id: MessageId,

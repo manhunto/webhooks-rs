@@ -21,14 +21,14 @@ impl InMemoryMessageStorage {
 
 impl MessageStorage for InMemoryMessageStorage {
     fn save(&self, app: Message) {
-        let mut applications = self.messages.lock().unwrap();
+        let mut messages = self.messages.lock().unwrap();
 
-        applications.push(app);
+        messages.push(app);
     }
 
     fn count(&self) -> usize {
-        let applications = self.messages.lock().unwrap();
+        let messages = self.messages.lock().unwrap();
 
-        applications.len()
+        messages.len()
     }
 }

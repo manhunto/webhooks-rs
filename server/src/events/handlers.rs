@@ -19,7 +19,7 @@ pub async fn create_message_handler(
         Payload::from(request.payload.clone()),
     );
 
-    storage.messages.count();
+    storage.messages.save(msg.clone());
 
     debug!(
         "Message created: {:?}, count: {}",
