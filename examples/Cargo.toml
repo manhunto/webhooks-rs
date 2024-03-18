@@ -13,7 +13,7 @@ name = "producer-server"
 path = "src/producer-server/main.rs"
 
 [dependencies]
-rand = "0.8.4"
 actix-web = "4"
+rand = "0.8.4"
 sdk = { path = "../sdk" }
 tokio = { version = "1.0.0", features = ["full"] }

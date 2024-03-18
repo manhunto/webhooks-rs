@@ -1,0 +1,9 @@
+name: Cargo sort
+on: [ pull_request, push ]
+jobs:
+  clippy_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run cargo sort
+        run: cargo sort --workspace --check
