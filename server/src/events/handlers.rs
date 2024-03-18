@@ -33,10 +33,25 @@ pub async fn create_message_handler(
     debug!("{} endpoints found for message {}", endpoints.len(), msg.id);
 
     for endpoint in endpoints {
-        debug!("{} sent to {}", msg.id, endpoint.url);
-    }
+        debug!("{} sending to {}", msg.id, endpoint.url);
 
-    // todo dispatch
+        let response = reqwest::Client::new()
+            .post(endpoint.url)
+            .json(msg.payload.to_string().as_str())
+            .send()
+            .await;
+
+        let dbg_msg = match response {
+            Ok(res) => format!("Success! {}", res.status()),
+            Err(res) => {
+                let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
+
+                format!("Error response! Status: {}, Error: {}", status, res)
+            }
+        };
+
+        debug!("{}", dbg_msg);
+    }
 
     Ok(HttpResponse::Created())
 }

@@ -1536,6 +1536,7 @@ dependencies = [
  "log",
  "log4rs",
  "regex",
+ "reqwest",
  "serde",
  "serde_json",
  "svix-ksuid",

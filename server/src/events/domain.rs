@@ -13,6 +13,12 @@ impl From<String> for Payload {
     }
 }
 
+impl Display for Payload {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.body)
+    }
+}
+
 #[derive(Debug, Clone, derive::Ksuid)]
 #[prefix = "msg"]
 pub struct MessageId {
@@ -24,7 +30,7 @@ pub struct MessageId {
 pub struct Message {
     pub id: MessageId,
     app_id: ApplicationId,
-    payload: Payload,
+    pub payload: Payload,
     topic: Topic,
 }
 
