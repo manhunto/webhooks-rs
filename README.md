@@ -4,7 +4,7 @@
     <img src="assets/logo.jpeg" width="350">
 </div>
 
-<p style="text-align: center">
+<p align="center">
     <img src="https://github.com/manhunto/webhooks-rs/actions/workflows/rust.yml/badge.svg?branch=master" alt="build"/>
     <img src="https://img.shields.io/github/contributors/manhunto/webhooks-rs" alt="contributors"/>
     <img src="https://img.shields.io/github/commit-activity/m/manhunto/webhooks-rs" alt="commit-activity"/>
