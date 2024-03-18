@@ -6,6 +6,7 @@ use crate::storage::Storage;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder};
 use log::debug;
+use serde_json::json;
 
 pub async fn create_application_handler(
     storage: Data<Storage>,
@@ -31,8 +32,12 @@ pub async fn create_endpoint_handler(
     request: Json<CreateEndpointRequest>,
     path: Path<String>,
 ) -> impl Responder {
-    let app_id = path.into_inner();
-    // todo check if app exists
+    let app_id = ApplicationId::try_from(path.into_inner()).unwrap();
+
+    if !storage.applications.exists(&app_id) {
+        // todo unify errors
+        return HttpResponse::NotFound().json(json!({"error": "application not found"}));
+    }
 
     let url = request.url.clone();
     let topics = request
@@ -42,7 +47,7 @@ pub async fn create_endpoint_handler(
         .map(|t| Topic::new(t).unwrap()) // todo handle error
         .collect();
 
-    let endpoint = Endpoint::new(url, ApplicationId::try_from(app_id).unwrap(), topics);
+    let endpoint = Endpoint::new(url, app_id, topics);
 
     storage.endpoints.save(endpoint.clone());
 

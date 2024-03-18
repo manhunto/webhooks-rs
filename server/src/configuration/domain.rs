@@ -5,7 +5,7 @@ use regex::Regex;
 use std::fmt::{Display, Formatter};
 use url::Url;
 
-#[derive(Debug, Clone, derive::Ksuid)]
+#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
 #[prefix = "app"]
 pub struct ApplicationId {
     id: String,

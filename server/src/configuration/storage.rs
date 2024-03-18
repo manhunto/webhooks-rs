@@ -1,10 +1,12 @@
-use crate::configuration::domain::{Application, Endpoint};
+use crate::configuration::domain::{Application, ApplicationId, Endpoint};
 use std::sync::Mutex;
 
 pub trait ApplicationStorage {
     fn save(&self, app: Application);
 
     fn count(&self) -> usize;
+
+    fn exists(&self, app_id: &ApplicationId) -> bool;
 }
 
 pub struct InMemoryApplicationStorage {
@@ -30,6 +32,12 @@ impl ApplicationStorage for InMemoryApplicationStorage {
         let applications = self.applications.lock().unwrap();
 
         applications.len()
+    }
+
+    fn exists(&self, app_id: &ApplicationId) -> bool {
+        let applications = self.applications.lock().unwrap();
+
+        applications.iter().any(|app| app.id.eq(app_id))
     }
 }
 
