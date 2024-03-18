@@ -1,5 +1,13 @@
 name: Cargo sort
-on: [ pull_request, push ]
+on:
+  pull_request:
+    paths:
+      - 'Cargo.toml'
+      - '**/Cargo.toml'
+  push:
+    paths:
+      - 'Cargo.toml'
+      - '**/Cargo.toml'
 jobs:
   clippy_check:
     runs-on: ubuntu-latest
