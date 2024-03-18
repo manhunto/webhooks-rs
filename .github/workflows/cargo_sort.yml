@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install cargo-sort
+        run: cargo install cargo-sort
       - name: Run cargo sort
-        run: |
-          cargo install cargo-sort
-          cargo sort --workspace --check
+        run: cargo sort --workspace --check
