@@ -2,11 +2,11 @@ use crate::configuration::domain::{Application, ApplicationId, Endpoint, Topic};
 use crate::configuration::models::{
     CreateAppRequest, CreateAppResponse, CreateEndpointRequest, CreateEndpointResponse,
 };
+use crate::error::ResponseError;
 use crate::storage::Storage;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder};
 use log::debug;
-use serde_json::json;
 
 pub async fn create_application_handler(
     storage: Data<Storage>,
@@ -31,13 +31,9 @@ pub async fn create_endpoint_handler(
     storage: Data<Storage>,
     request: Json<CreateEndpointRequest>,
     path: Path<String>,
-) -> impl Responder {
+) -> Result<impl Responder, ResponseError> {
     let app_id = ApplicationId::try_from(path.into_inner()).unwrap();
-
-    if !storage.applications.exists(&app_id) {
-        // todo unify errors
-        return HttpResponse::NotFound().json(json!({"error": "application not found"}));
-    }
+    let app = storage.applications.get(&app_id)?;
 
     let url = request.url.clone();
     let topics = request
@@ -47,7 +43,7 @@ pub async fn create_endpoint_handler(
         .map(|t| Topic::new(t).unwrap()) // todo handle error
         .collect();
 
-    let endpoint = Endpoint::new(url, app_id, topics);
+    let endpoint = Endpoint::new(url, app.id, topics);
 
     storage.endpoints.save(endpoint.clone());
 
@@ -59,5 +55,5 @@ pub async fn create_endpoint_handler(
 
     let response = CreateEndpointResponse::from(endpoint);
 
-    HttpResponse::Created().json(response)
+    Ok(HttpResponse::Created().json(response))
 }

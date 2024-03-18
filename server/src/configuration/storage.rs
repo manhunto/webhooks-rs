@@ -1,4 +1,6 @@
 use crate::configuration::domain::{Application, ApplicationId, Endpoint};
+use crate::error::Error;
+use crate::error::Error::EntityNotFound;
 use std::sync::Mutex;
 
 pub trait ApplicationStorage {
@@ -7,6 +9,8 @@ pub trait ApplicationStorage {
     fn count(&self) -> usize;
 
     fn exists(&self, app_id: &ApplicationId) -> bool;
+
+    fn get(&self, app_id: &ApplicationId) -> Result<Application, Error>;
 }
 
 pub struct InMemoryApplicationStorage {
@@ -38,6 +42,16 @@ impl ApplicationStorage for InMemoryApplicationStorage {
         let applications = self.applications.lock().unwrap();
 
         applications.iter().any(|app| app.id.eq(app_id))
+    }
+
+    fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
+        let applications = self.applications.lock().unwrap();
+
+        applications
+            .clone()
+            .into_iter()
+            .find(|app| app.id.eq(app_id))
+            .ok_or_else(|| EntityNotFound("Application not found".to_string()))
     }
 }
 

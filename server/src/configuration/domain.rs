@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::error::Error::DomainError;
+use crate::error::Error::InvalidArgument;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::fmt::{Display, Formatter};
@@ -63,7 +63,7 @@ impl Topic {
         }
 
         if !RE.is_match(name.as_str()) {
-            return Err(DomainError("Invalid topic name".to_string()));
+            return Err(InvalidArgument("Invalid topic name".to_string()));
         }
 
         Ok(Self { name })
