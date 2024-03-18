@@ -1,4 +1,4 @@
-use crate::configuration::domain::ApplicationId;
+use crate::configuration::domain::{ApplicationId, Topic};
 use crate::error::ResponseError;
 use crate::events::domain::{Message, Payload};
 use crate::events::models::CreateMessageRequest;
@@ -14,8 +14,12 @@ pub async fn create_message_handler(
 ) -> Result<impl Responder, ResponseError> {
     let app_id = ApplicationId::try_from(path.into_inner()).unwrap();
     let app = storage.applications.get(&app_id)?;
-
-    let msg = Message::new(app.id, Payload::from(request.payload.clone()));
+    let topic = Topic::new(request.topic.clone())?;
+    let msg = Message::new(
+        app.id,
+        Payload::from(request.payload.clone()),
+        topic.clone(),
+    );
 
     storage.messages.save(msg.clone());
 
@@ -25,8 +29,13 @@ pub async fn create_message_handler(
         storage.messages.count()
     );
 
-    // todo fetch all endpoints for app
-    // filter by topics
+    let endpoints = storage.endpoints.for_topic(&app_id, &topic);
+    debug!("{} endpoints found for message {}", endpoints.len(), msg.id);
+
+    for endpoint in endpoints {
+        debug!("{} sent to {}", msg.id, endpoint.url);
+    }
+
     // todo dispatch
 
     Ok(HttpResponse::Created())

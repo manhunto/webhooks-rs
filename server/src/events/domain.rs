@@ -1,4 +1,4 @@
-use crate::configuration::domain::ApplicationId;
+use crate::configuration::domain::{ApplicationId, Topic};
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
@@ -15,24 +15,26 @@ impl From<String> for Payload {
 
 #[derive(Debug, Clone, derive::Ksuid)]
 #[prefix = "msg"]
-struct MessageId {
+pub struct MessageId {
     id: String,
 }
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)] // todo remove me soon
 pub struct Message {
-    id: MessageId,
+    pub id: MessageId,
     app_id: ApplicationId,
     payload: Payload,
+    topic: Topic,
 }
 
 impl Message {
-    pub fn new(app_id: ApplicationId, payload: Payload) -> Self {
+    pub fn new(app_id: ApplicationId, payload: Payload, topic: Topic) -> Self {
         Self {
             id: MessageId::new(),
             app_id,
             payload,
+            topic,
         }
     }
 }

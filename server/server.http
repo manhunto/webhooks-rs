@@ -29,6 +29,7 @@ POST {{url}}/v1/application/{{app_id}}/message
 Content-Type: application/json
 
 {
+  "topic": "contact.created",
   "payload": {
     "foo": "bar"
   }

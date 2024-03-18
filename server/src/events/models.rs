@@ -5,6 +5,7 @@ use serde_json::value::RawValue;
 pub struct CreateMessageRequest {
     #[serde(deserialize_with = "deserialize_json_string")]
     pub payload: String,
+    pub topic: String,
 }
 
 #[derive(Debug)]

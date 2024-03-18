@@ -1,4 +1,4 @@
-use crate::configuration::domain::{Application, ApplicationId, Endpoint};
+use crate::configuration::domain::{Application, ApplicationId, Endpoint, Topic};
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
 use std::sync::Mutex;
@@ -59,6 +59,8 @@ pub trait EndpointStorage {
     fn save(&self, endpoint: Endpoint);
 
     fn count(&self) -> usize;
+
+    fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint>;
 }
 
 pub struct InMemoryEndpointStorage {
@@ -84,5 +86,17 @@ impl EndpointStorage for InMemoryEndpointStorage {
         let endpoints = self.endpoints.lock().unwrap();
 
         endpoints.len()
+    }
+
+    fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint> {
+        let endpoints = self.endpoints.lock().unwrap();
+
+        endpoints
+            .clone()
+            .into_iter()
+            .filter(|endpoint| {
+                endpoint.app_id.eq(application_id) && endpoint.topics.contains(topic)
+            })
+            .collect()
     }
 }

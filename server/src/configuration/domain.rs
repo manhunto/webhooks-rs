@@ -51,7 +51,7 @@ impl Endpoint {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Topic {
     name: String,
 }
