@@ -13,13 +13,17 @@ pub enum Error {
 #[derive(Debug)]
 pub enum ResponseError {
     NotFound(String),
+    BadRequest(String),
 }
 
 impl Display for ResponseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ResponseError::NotFound(val) => write!(f, "{}", val),
-        }
+        let msg = match self {
+            ResponseError::NotFound(val) => val,
+            ResponseError::BadRequest(val) => val,
+        };
+
+        write!(f, "{}", msg)
     }
 }
 
@@ -27,6 +31,7 @@ impl actix_web::error::ResponseError for ResponseError {
     fn status_code(&self) -> StatusCode {
         match *self {
             ResponseError::NotFound(_) => StatusCode::NOT_FOUND,
+            ResponseError::BadRequest(_) => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -43,7 +48,7 @@ impl From<Error> for ResponseError {
     fn from(value: Error) -> Self {
         match value {
             Error::EntityNotFound(msg) => ResponseError::NotFound(msg),
-            Error::InvalidArgument(_) => panic!("not implemented"),
+            Error::InvalidArgument(msg) => ResponseError::BadRequest(msg),
         }
     }
 }

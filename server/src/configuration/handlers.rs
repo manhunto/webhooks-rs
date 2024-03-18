@@ -6,6 +6,7 @@ use crate::error::ResponseError;
 use crate::storage::Storage;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder};
+use itertools::Itertools;
 use log::debug;
 
 pub async fn create_application_handler(
@@ -40,8 +41,8 @@ pub async fn create_endpoint_handler(
         .topics
         .clone()
         .into_iter()
-        .map(|t| Topic::new(t).unwrap()) // todo handle error
-        .collect();
+        .map(Topic::new)
+        .try_collect()?;
 
     let endpoint = Endpoint::new(url, app.id, topics);
 
