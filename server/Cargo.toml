@@ -22,8 +22,8 @@ url = "2.5.0"
 
 [[bin]]
 name = "server"
-path = "src/main.rs"
+path = "src/bin/server.rs"
 
 [[bin]]
 name = "dispatcher"
-path = "src/dispatcher.rs"
+path = "src/bin/dispatcher.rs"

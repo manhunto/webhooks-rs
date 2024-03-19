@@ -1,16 +1,9 @@
-mod configuration;
-mod error;
-mod events;
-mod logs;
-mod routes;
-mod storage;
-
-use crate::logs::init_log;
-use crate::routes::routes;
-use crate::storage::Storage;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::debug;
+use server::logs::init_log;
+use server::routes::routes;
+use server::storage::Storage;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
