@@ -1,8 +1,10 @@
 alias b := build
 alias c := clippy
 alias t := test
-alias r := run
-alias rr := run-release
+alias rs := run-server
+alias rd := run-dispatcher
+alias rps := run-producer-server
+alias rds := run-destination-server
 
 default:
     @just --list
@@ -10,11 +12,21 @@ default:
 build:
     cargo build
 
-run:
-    cargo run
+# Run main server
+run-server *OPTIONS:
+    cargo run --package=server {{ OPTIONS }}
 
-run-release:
-    cargo run --release
+# Run consumer that sends messages to destination servers
+run-dispatcher *OPTIONS:
+    cargo run --package=server --bin=dispatcher {{ OPTIONS }}
+
+# Run example server that produces messages
+run-producer-server *OPTIONS:
+    cargo run --example producer-server {{ OPTIONS }}
+
+# Run example server that listens for messages and act like real server (with random response delay)
+run-destination-server *OPTIONS:
+    cargo run --example destination-server {{ OPTIONS }}
 
 test:
     cargo test
