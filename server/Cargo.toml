@@ -2,6 +2,7 @@
 name = "server"
 version = "0.1.0"
 edition = "2021"
+default-run = "server"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -18,3 +19,11 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0.114", features = ["raw_value"] }
 svix-ksuid = { version = "^0.8.0", features = ["serde"] }
 url = "2.5.0"
+
+[[bin]]
+name = "server"
+path = "src/main.rs"
+
+[[bin]]
+name = "dispatcher"
+path = "src/dispatcher.rs"
