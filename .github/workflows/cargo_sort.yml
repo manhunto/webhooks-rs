@@ -9,7 +9,7 @@ on:
       - 'Cargo.toml'
       - '**/Cargo.toml'
 jobs:
-  clippy_check:
+  cargo_sort:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
