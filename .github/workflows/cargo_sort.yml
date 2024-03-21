@@ -5,6 +5,8 @@ on:
       - 'Cargo.toml'
       - '**/Cargo.toml'
   push:
+    branches:
+      - master
     paths:
       - 'Cargo.toml'
       - '**/Cargo.toml'

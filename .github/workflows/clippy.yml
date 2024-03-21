@@ -1,5 +1,9 @@
 name: Clippy check
-on: [pull_request, push]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 env:
   RUSTFLAGS: "-Dwarnings"
 jobs:
