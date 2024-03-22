@@ -5,14 +5,14 @@ use crate::events::models::CreateMessageRequest;
 use crate::storage::Storage;
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder, Result};
-use lapin::options::{BasicPublishOptions, QueueDeclareOptions};
+use lapin::options::BasicPublishOptions;
 use lapin::publisher_confirm::Confirmation;
-use lapin::types::FieldTable;
-use lapin::{BasicProperties, Connection, ConnectionProperties};
-use log::{debug, info};
+use lapin::{BasicProperties, Channel};
+use log::debug;
 
 pub async fn create_message_handler(
     storage: Data<Storage>,
+    rabbit_channel: Data<Channel>,
     request: Json<CreateMessageRequest>,
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
@@ -33,27 +33,6 @@ pub async fn create_message_handler(
         storage.messages.count()
     );
 
-    let addr = "amqp://guest:guest@localhost:5672";
-
-    let conn = Connection::connect(addr, ConnectionProperties::default())
-        .await
-        .unwrap();
-
-    info!("connected established with rabbitmq");
-
-    let channel = conn.create_channel().await.unwrap();
-
-    let queue = channel
-        .queue_declare(
-            "sent_message",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
-        )
-        .await
-        .unwrap();
-
-    debug!("queue declared {:?}", queue);
-
     let endpoints = storage.endpoints.for_topic(&app_id, &topic);
     debug!("{} endpoints found for message {}", endpoints.len(), msg.id);
 
@@ -63,7 +42,7 @@ pub async fn create_message_handler(
         let payload_as_str = msg.payload.to_string();
         let payload = payload_as_str.as_bytes();
 
-        let confirm = channel
+        let confirm = rabbit_channel
             .basic_publish(
                 "",
                 "sent_message",
