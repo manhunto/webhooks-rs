@@ -1,3 +1,4 @@
+mod cmd;
 mod configuration;
 mod error;
 mod events;

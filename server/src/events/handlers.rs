@@ -1,3 +1,4 @@
+use crate::cmd::SentMessage;
 use crate::configuration::domain::{ApplicationId, Topic};
 use crate::error::ResponseError;
 use crate::events::domain::{Message, Payload};
@@ -39,15 +40,13 @@ pub async fn create_message_handler(
     for endpoint in endpoints {
         debug!("{} sending to {}", msg.id, endpoint.url);
 
-        let payload_as_str = msg.payload.to_string();
-        let payload = payload_as_str.as_bytes();
-
+        let cmd = SentMessage::new(msg.payload.clone(), endpoint.url, msg.id.clone());
         let confirm = rabbit_channel
             .basic_publish(
                 "",
                 "sent_message",
                 BasicPublishOptions::default(),
-                payload,
+                serde_json::to_string(&cmd).unwrap().as_bytes(),
                 BasicProperties::default(),
             )
             .await
