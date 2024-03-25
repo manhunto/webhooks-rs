@@ -39,3 +39,5 @@ start:
 
 stop:
     docker-compose down --remove-orphans
+
+check: build clippy test
