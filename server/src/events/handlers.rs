@@ -34,8 +34,13 @@ pub async fn create_message_handler(
         storage.messages.count()
     );
 
-    let endpoints = storage.endpoints.for_topic(&app_id, &topic);
-    debug!("{} endpoints found for message {}", endpoints.len(), msg.id);
+    let endpoints = storage.endpoints.for_topic(&app_id, &msg.topic);
+    debug!(
+        "in app {} - {} endpoints found for message {}",
+        msg.app_id,
+        endpoints.len(),
+        msg.id
+    );
 
     for endpoint in endpoints {
         debug!("{} sending to {}", msg.id, endpoint.url);

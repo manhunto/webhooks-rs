@@ -2,7 +2,6 @@ use crate::configuration::domain::{ApplicationId, Topic};
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // todo remove me soon
 pub struct Payload {
     body: String,
 }
@@ -26,12 +25,11 @@ pub struct MessageId {
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // todo remove me soon
 pub struct Message {
     pub id: MessageId,
-    app_id: ApplicationId,
+    pub app_id: ApplicationId,
     pub payload: Payload,
-    topic: Topic,
+    pub topic: Topic,
 }
 
 impl Message {
