@@ -4,9 +4,9 @@ use url::Url;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentMessage {
-    payload: String,
-    url: String,
-    msg_id: String,
+    pub payload: String,
+    pub url: String,
+    pub msg_id: String,
 }
 
 impl SentMessage {
