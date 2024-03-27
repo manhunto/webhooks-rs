@@ -1,32 +1,15 @@
 use futures_lite::stream::StreamExt;
-use lapin::{options::*, types::FieldTable, Connection, ConnectionProperties};
+use lapin::{options::*, types::FieldTable};
 use log::info;
+use server::amqp::establish_connection_with_rabbit;
+use server::cmd::SentMessage;
 use server::logs::init_log;
 
 #[tokio::main]
 async fn main() {
     init_log();
 
-    let addr = "amqp://guest:guest@localhost:5672";
-
-    let conn = Connection::connect(addr, ConnectionProperties::default())
-        .await
-        .unwrap();
-
-    info!("connected established with rabbitmq");
-
-    let channel = conn.create_channel().await.unwrap();
-
-    let queue = channel
-        .queue_declare(
-            "sent_message",
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
-        )
-        .await
-        .unwrap();
-
-    info!("queue declared {:?}", queue);
+    let channel = establish_connection_with_rabbit().await;
 
     let mut consumer = channel
         .basic_consume(
@@ -43,8 +26,9 @@ async fn main() {
     while let Some(delivery) = consumer.next().await {
         let delivery = delivery.expect("error in consumer");
         let msg = String::from_utf8_lossy(&delivery.data);
+        let cmd: SentMessage = serde_json::from_str(&msg).unwrap();
 
-        info!("message consumed: {:?}", msg);
+        info!("message consumed: {:?}", cmd);
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }

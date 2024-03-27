@@ -1,4 +1,5 @@
-mod cmd;
+pub mod amqp;
+pub mod cmd;
 mod configuration;
 mod error;
 mod events;

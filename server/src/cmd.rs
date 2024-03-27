@@ -2,7 +2,7 @@ use crate::events::domain::{MessageId, Payload};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SentMessage {
     payload: String,
     url: String,
