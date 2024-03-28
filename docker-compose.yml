@@ -5,14 +5,11 @@ services:
       context: .
       dockerfile: .docker/rabbitmq/Dockerfile
       args:
-        VERSION: "3.13.0"
+        RABBITMQ_VERSION: "3.13.0"
     container_name: 'rabbitmq'
     ports:
       - "5672:5672"
       - "15672:15672"
-    volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
     privileged: true
     networks:
       - rabbitmq
