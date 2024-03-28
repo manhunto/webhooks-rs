@@ -34,11 +34,11 @@ test:
 clippy:
     cargo clippy
 
-start:
-    docker-compose up -d
+docker-start:
+    docker compose up
 
-stop:
-    docker-compose down --remove-orphans
+docker-stop:
+    docker compose down --remove-orphans
 
 check: build clippy test
     cargo sort --workspace
