@@ -35,7 +35,7 @@ clippy:
     cargo clippy
 
 docker-start:
-    docker compose up
+    docker compose up --detach
 
 docker-stop:
     docker compose down --remove-orphans
