@@ -17,4 +17,4 @@ actix-web = "4"
 futures = "0.3.30"
 rand = "0.8.4"
 sdk = { path = "../sdk" }
-tokio = { version = "1.0.0", features = ["full"] }
+tokio = { version = "1.37.0", features = ["full"] }
