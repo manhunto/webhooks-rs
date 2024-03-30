@@ -6,6 +6,8 @@ use lapin::types::{AMQPType, AMQPValue, FieldTable, ShortString};
 use log::info;
 use serde_json::Value;
 
+pub const SENT_MESSAGE_QUEUE: &str = "sent-message";
+
 pub async fn establish_connection_with_rabbit() -> Channel {
     let addr = "amqp://guest:guest@localhost:5672";
     let conn = Connection::connect(addr, ConnectionProperties::default())
@@ -36,7 +38,7 @@ pub async fn establish_connection_with_rabbit() -> Channel {
 
     let queue = channel
         .queue_declare(
-            "sent-message",
+            SENT_MESSAGE_QUEUE,
             QueueDeclareOptions::default(),
             FieldTable::default(),
         )
@@ -47,7 +49,7 @@ pub async fn establish_connection_with_rabbit() -> Channel {
         .queue_bind(
             queue.name().as_str(),
             "sent-message-exchange",
-            "sent-message",
+            "",
             QueueBindOptions::default(),
             FieldTable::default(),
         )

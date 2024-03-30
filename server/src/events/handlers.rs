@@ -49,15 +49,15 @@ pub async fn create_message_handler(
     for endpoint in endpoints {
         debug!("{} sending to {}", msg.id, endpoint.url);
 
-        let cmd = SentMessage::new(msg.payload.clone(), endpoint.url, msg.id.clone());
-        let headers = FieldTable::from(BTreeMap::from(
-            [(ShortString::from("x-delay"), AMQPValue::from(5000)); 1],
-        ));
+        let btree: BTreeMap<_, _> = [(ShortString::from("x-delay"), AMQPValue::from(10000))].into();
+        let headers = FieldTable::from(btree);
         let properties = BasicProperties::default().with_headers(headers);
+
+        let cmd = SentMessage::new(msg.payload.clone(), endpoint.url, msg.id.clone());
         let confirm = rabbit_channel
             .basic_publish(
                 "sent-message-exchange",
-                "sent-message",
+                "",
                 BasicPublishOptions::default(),
                 serde_json::to_string(&cmd).unwrap().as_bytes(),
                 properties,
