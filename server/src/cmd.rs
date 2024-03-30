@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::events::domain::{MessageId, Payload};
+use crate::retry::Retryable;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentMessage {
@@ -20,8 +21,15 @@ impl SentMessage {
             attempt: 1,
         }
     }
+}
 
-    pub fn with_increased_attempt(&self) -> Self {
+impl Retryable for SentMessage {
+    fn attempt(&self) -> usize {
+        self.attempt
+    }
+
+    fn with_increased_attempt(&self) -> SentMessage
+    {
         Self {
             payload: self.payload.clone(),
             url: self.url.clone(),

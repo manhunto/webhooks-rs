@@ -1,8 +1,8 @@
-use actix_web::{HttpResponse, Responder, Result};
 use actix_web::web::{Data, Json, Path};
-use lapin::{BasicProperties, Channel};
+use actix_web::{HttpResponse, Responder, Result};
 use lapin::options::BasicPublishOptions;
 use lapin::publisher_confirm::Confirmation;
+use lapin::{BasicProperties, Channel};
 use log::debug;
 
 use crate::cmd::SentMessage;
