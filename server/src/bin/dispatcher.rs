@@ -1,6 +1,7 @@
 use futures_lite::stream::StreamExt;
 use lapin::{options::*, types::FieldTable};
 use log::{debug, info};
+
 use server::amqp::establish_connection_with_rabbit;
 use server::cmd::SentMessage;
 use server::logs::init_log;
@@ -13,7 +14,7 @@ async fn main() {
 
     let mut consumer = channel
         .basic_consume(
-            "sent_message",
+            "sent-message",
             "dispatcher",
             BasicConsumeOptions::default(),
             FieldTable::default(),
