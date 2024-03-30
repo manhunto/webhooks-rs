@@ -1,11 +1,8 @@
-use std::collections::BTreeMap;
-
 use actix_web::{HttpResponse, Responder, Result};
 use actix_web::web::{Data, Json, Path};
 use lapin::{BasicProperties, Channel};
 use lapin::options::BasicPublishOptions;
 use lapin::publisher_confirm::Confirmation;
-use lapin::types::{AMQPValue, FieldTable, ShortString};
 use log::debug;
 
 use crate::cmd::SentMessage;
@@ -49,10 +46,6 @@ pub async fn create_message_handler(
     for endpoint in endpoints {
         debug!("{} sending to {}", msg.id, endpoint.url);
 
-        let btree: BTreeMap<_, _> = [(ShortString::from("x-delay"), AMQPValue::from(10000))].into();
-        let headers = FieldTable::from(btree);
-        let properties = BasicProperties::default().with_headers(headers);
-
         let cmd = SentMessage::new(msg.payload.clone(), endpoint.url, msg.id.clone());
         let confirm = rabbit_channel
             .basic_publish(
@@ -60,7 +53,7 @@ pub async fn create_message_handler(
                 "",
                 BasicPublishOptions::default(),
                 serde_json::to_string(&cmd).unwrap().as_bytes(),
-                properties,
+                BasicProperties::default(),
             )
             .await
             .unwrap()

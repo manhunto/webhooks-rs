@@ -1,5 +1,9 @@
+use std::collections::BTreeMap;
+
 use futures_lite::stream::StreamExt;
-use lapin::{options::*, types::FieldTable};
+use lapin::publisher_confirm::Confirmation;
+use lapin::types::{AMQPValue, ShortString};
+use lapin::{options::*, types::FieldTable, BasicProperties};
 use log::{debug, info};
 
 use server::amqp::{establish_connection_with_rabbit, SENT_MESSAGE_QUEUE};
@@ -32,12 +36,12 @@ async fn main() {
         info!("message consumed: {:?}", cmd);
 
         let response = reqwest::Client::new()
-            .post(cmd.url)
-            .json(cmd.payload.as_str())
+            .post(&cmd.url)
+            .json(&cmd.payload.as_str())
             .send()
             .await;
 
-        let dbg_msg = match response {
+        let dbg_msg = match &response {
             Ok(res) => format!("Success! {}", res.status()),
             Err(res) => {
                 let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
@@ -47,6 +51,35 @@ async fn main() {
         };
 
         debug!("{}", dbg_msg);
+
+        if response.is_err() && cmd.attempt < 5 {
+            let btree: BTreeMap<_, _> =
+                [(ShortString::from("x-delay"), AMQPValue::from(5000))].into();
+            let headers = FieldTable::from(btree);
+            let properties = BasicProperties::default().with_headers(headers);
+
+            let cmd_to_retry = cmd.with_increased_attempt();
+
+            let confirm = channel
+                .basic_publish(
+                    "sent-message-exchange",
+                    "",
+                    BasicPublishOptions::default(),
+                    serde_json::to_string(&cmd_to_retry).unwrap().as_bytes(),
+                    properties,
+                )
+                .await
+                .unwrap()
+                .await
+                .unwrap();
+
+            assert_eq!(confirm, Confirmation::NotRequested);
+
+            debug!(
+                "Message {} queued again. Attempt: {}",
+                cmd_to_retry.msg_id, cmd_to_retry.attempt
+            );
+        }
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }

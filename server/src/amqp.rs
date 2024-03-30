@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
-use lapin::{Channel, Connection, ConnectionProperties, ExchangeKind};
 use lapin::options::{ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions};
 use lapin::types::{AMQPType, AMQPValue, FieldTable, ShortString};
+use lapin::{Channel, Connection, ConnectionProperties, ExchangeKind};
 use log::info;
 use serde_json::Value;
 
