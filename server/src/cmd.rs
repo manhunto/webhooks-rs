@@ -28,8 +28,7 @@ impl Retryable for SentMessage {
         self.attempt
     }
 
-    fn with_increased_attempt(&self) -> SentMessage
-    {
+    fn with_increased_attempt(&self) -> SentMessage {
         Self {
             payload: self.payload.clone(),
             url: self.url.clone(),

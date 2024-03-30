@@ -88,7 +88,8 @@ async fn retry(retryable: impl Retryable, channel: &Channel) {
     assert_eq!(confirm, Confirmation::NotRequested);
 
     debug!(
-        "Message queued again. Attempt: {}",
-        cmd_to_retry.attempt()
+        "Message queued again. Attempt: {}. Delay: {:?}",
+        cmd_to_retry.attempt(),
+        waiting_time
     );
 }
