@@ -7,4 +7,3 @@ pub mod logs;
 pub mod retry;
 pub mod routes;
 pub mod storage;
-pub mod serializer;

@@ -1,8 +1,8 @@
-use actix_web::web::Data;
 use actix_web::{App, HttpServer};
+use actix_web::web::Data;
 use log::info;
 
-use server::amqp::{establish_connection_with_rabbit, Dispatcher};
+use server::amqp::{establish_connection_with_rabbit, Publisher};
 use server::logs::init_log;
 use server::routes::routes;
 use server::storage::Storage;
@@ -16,7 +16,7 @@ async fn main() -> std::io::Result<()> {
 
     let storage = Data::new(Storage::new());
     let channel = establish_connection_with_rabbit().await;
-    let dispatcher = Data::new(Dispatcher::new(channel));
+    let dispatcher = Data::new(Publisher::new(channel));
     let app = move || {
         App::new()
             .app_data(storage.clone())

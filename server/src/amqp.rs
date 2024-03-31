@@ -8,10 +8,11 @@ use lapin::options::{
 use lapin::publisher_confirm::Confirmation;
 use lapin::types::{AMQPType, AMQPValue, FieldTable, ShortString};
 use log::info;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::cmd::AsyncMessage;
-use crate::serializer::Serializer;
 
 pub const SENT_MESSAGE_QUEUE: &str = "sent-message";
 const SENT_MESSAGE_EXCHANGE: &str = "sent-message-exchange";
@@ -69,11 +70,11 @@ pub async fn establish_connection_with_rabbit() -> Channel {
     channel
 }
 
-pub struct Dispatcher {
+pub struct Publisher {
     channel: Channel,
 }
 
-impl Dispatcher {
+impl Publisher {
     pub fn new(channel: Channel) -> Self {
         Self { channel }
     }
@@ -116,5 +117,25 @@ impl Dispatcher {
             .unwrap();
 
         assert_eq!(confirm, Confirmation::NotRequested);
+    }
+}
+
+pub struct Serializer {}
+
+impl Serializer {
+    pub fn deserialize<T>(binary: &[u8]) -> T
+        where T: DeserializeOwned
+    {
+        let msg = String::from_utf8_lossy(binary);
+
+        serde_json::from_str(&msg).unwrap()
+    }
+
+    pub fn serialize<T>(value: T) -> Vec<u8> // is possible to return &[u8] ?
+        where T: Serialize
+    {
+        let string = serde_json::to_string(&value);
+
+        string.unwrap().as_bytes().to_vec()
     }
 }

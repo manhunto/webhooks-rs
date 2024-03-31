@@ -4,11 +4,10 @@ use futures_lite::stream::StreamExt;
 use lapin::{options::*, types::FieldTable};
 use log::{debug, info};
 
-use server::amqp::{Dispatcher, establish_connection_with_rabbit, SENT_MESSAGE_QUEUE};
+use server::amqp::{establish_connection_with_rabbit, Publisher, SENT_MESSAGE_QUEUE, Serializer};
 use server::cmd::{AsyncMessage, SentMessage};
 use server::logs::init_log;
 use server::retry::{ExponentialRetryPolicy, Retryable, RetryPolicy};
-use server::serializer::Serializer;
 
 #[tokio::main]
 async fn main() {
@@ -26,7 +25,7 @@ async fn main() {
         .await
         .unwrap();
 
-    let dispatcher = Dispatcher::new(channel);
+    let publisher = Publisher::new(channel);
 
     info!("consumer is ready");
 
@@ -56,7 +55,7 @@ async fn main() {
         debug!("{}", dbg_msg);
 
         if response.is_err() {
-            retry(cmd, &retry_policy, &dispatcher).await;
+            retry(cmd, &retry_policy, &publisher).await;
         }
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -66,7 +65,7 @@ async fn main() {
 async fn retry(
     sent_message: SentMessage,
     retry_policy: &impl RetryPolicy,
-    dispatcher: &Dispatcher,
+    publisher: &Publisher,
 ) {
     if !retry_policy.is_retryable(&sent_message) {
         return;
@@ -75,7 +74,7 @@ async fn retry(
     let waiting_time = retry_policy.get_waiting_time(&sent_message);
     let cmd_to_retry = sent_message.with_increased_attempt();
 
-    dispatcher
+    publisher
         .publish_delayed(
             AsyncMessage::SentMessage(cmd_to_retry.clone()),
             waiting_time,

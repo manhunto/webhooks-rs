@@ -1,8 +1,8 @@
-use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder, Result};
+use actix_web::web::{Data, Json, Path};
 use log::debug;
 
-use crate::amqp::Dispatcher;
+use crate::amqp::Publisher;
 use crate::cmd::{AsyncMessage, SentMessage};
 use crate::configuration::domain::{ApplicationId, Topic};
 use crate::error::ResponseError;
@@ -12,7 +12,7 @@ use crate::storage::Storage;
 
 pub async fn create_message_handler(
     storage: Data<Storage>,
-    dispatcher: Data<Dispatcher>,
+    dispatcher: Data<Publisher>,
     request: Json<CreateMessageRequest>,
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
