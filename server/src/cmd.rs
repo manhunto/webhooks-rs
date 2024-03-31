@@ -4,7 +4,13 @@ use url::Url;
 use crate::events::domain::{MessageId, Payload};
 use crate::retry::Retryable;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "t", content = "c")]
+pub enum AsyncMessage {
+    SentMessage(SentMessage),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SentMessage {
     pub payload: String,
     pub url: String,

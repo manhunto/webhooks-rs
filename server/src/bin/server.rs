@@ -1,7 +1,8 @@
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use log::info;
-use server::amqp::establish_connection_with_rabbit;
+
+use server::amqp::{establish_connection_with_rabbit, Dispatcher};
 use server::logs::init_log;
 use server::routes::routes;
 use server::storage::Storage;
@@ -14,11 +15,12 @@ async fn main() -> std::io::Result<()> {
     let port = 8090;
 
     let storage = Data::new(Storage::new());
-    let rabbit_channel = Data::new(establish_connection_with_rabbit().await);
+    let channel = establish_connection_with_rabbit().await;
+    let dispatcher = Data::new(Dispatcher::new(channel));
     let app = move || {
         App::new()
             .app_data(storage.clone())
-            .app_data(rabbit_channel.clone())
+            .app_data(dispatcher.clone())
             .configure(routes)
     };
 

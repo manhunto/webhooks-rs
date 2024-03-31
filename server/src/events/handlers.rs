@@ -1,11 +1,9 @@
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder, Result};
-use lapin::options::BasicPublishOptions;
-use lapin::publisher_confirm::Confirmation;
-use lapin::{BasicProperties, Channel};
 use log::debug;
 
-use crate::cmd::SentMessage;
+use crate::amqp::Dispatcher;
+use crate::cmd::{AsyncMessage, SentMessage};
 use crate::configuration::domain::{ApplicationId, Topic};
 use crate::error::ResponseError;
 use crate::events::domain::{Message, Payload};
@@ -14,7 +12,7 @@ use crate::storage::Storage;
 
 pub async fn create_message_handler(
     storage: Data<Storage>,
-    rabbit_channel: Data<Channel>,
+    dispatcher: Data<Dispatcher>,
     request: Json<CreateMessageRequest>,
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
@@ -47,20 +45,9 @@ pub async fn create_message_handler(
         debug!("{} sending to {}", msg.id, endpoint.url);
 
         let cmd = SentMessage::new(msg.payload.clone(), endpoint.url, msg.id.clone());
-        let confirm = rabbit_channel
-            .basic_publish(
-                "sent-message-exchange",
-                "",
-                BasicPublishOptions::default(),
-                serde_json::to_string(&cmd).unwrap().as_bytes(),
-                BasicProperties::default(),
-            )
-            .await
-            .unwrap()
-            .await
-            .unwrap();
+        let message = AsyncMessage::SentMessage(cmd);
 
-        assert_eq!(confirm, Confirmation::NotRequested);
+        dispatcher.publish(message).await;
 
         debug!("Message published on the queue")
     }

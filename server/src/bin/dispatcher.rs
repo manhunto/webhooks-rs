@@ -1,22 +1,20 @@
-use std::collections::BTreeMap;
+use std::time::Duration;
 
 use futures_lite::stream::StreamExt;
-use lapin::{BasicProperties, Channel, options::*, types::FieldTable};
-use lapin::publisher_confirm::Confirmation;
-use lapin::types::{AMQPValue, ShortString};
+use lapin::{options::*, types::FieldTable};
 use log::{debug, info};
 
-use server::amqp::{establish_connection_with_rabbit, SENT_MESSAGE_QUEUE};
-use server::cmd::SentMessage;
+use server::amqp::{Dispatcher, establish_connection_with_rabbit, SENT_MESSAGE_QUEUE};
+use server::cmd::{AsyncMessage, SentMessage};
 use server::logs::init_log;
-use server::retry::Retryable;
+use server::retry::{ExponentialRetryPolicy, Retryable, RetryPolicy};
 
 #[tokio::main]
 async fn main() {
     init_log();
 
     let channel = establish_connection_with_rabbit().await;
-
+    let retry_policy = ExponentialRetryPolicy::new(5, 2, Duration::from_secs(2));
     let mut consumer = channel
         .basic_consume(
             SENT_MESSAGE_QUEUE,
@@ -27,12 +25,16 @@ async fn main() {
         .await
         .unwrap();
 
+    let dispatcher = Dispatcher::new(channel);
+
     info!("consumer is ready");
 
     while let Some(delivery) = consumer.next().await {
         let delivery = delivery.expect("error in consumer");
         let msg = String::from_utf8_lossy(&delivery.data);
-        let cmd: SentMessage = serde_json::from_str(&msg).unwrap();
+        let async_msg: AsyncMessage = serde_json::from_str(&msg).unwrap();
+
+        let AsyncMessage::SentMessage(cmd) = async_msg;
 
         info!("message consumed: {:?}", cmd);
 
@@ -54,38 +56,31 @@ async fn main() {
         debug!("{}", dbg_msg);
 
         if response.is_err() {
-            retry(cmd, &channel).await;
+            retry(cmd, &retry_policy, &dispatcher).await;
         }
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
 }
 
-async fn retry(retryable: impl Retryable, channel: &Channel) {
-    if retryable.attempt() >= 5 {
+async fn retry(
+    sent_message: SentMessage,
+    retry_policy: &impl RetryPolicy,
+    dispatcher: &Dispatcher,
+) {
+    if !retry_policy.is_retryable(&sent_message) {
         return;
     }
 
-    let btree: BTreeMap<_, _> = [(ShortString::from("x-delay"), AMQPValue::from(5000))].into();
-    let headers = FieldTable::from(btree);
-    let properties = BasicProperties::default().with_headers(headers);
+    let waiting_time = retry_policy.get_waiting_time(&sent_message);
+    let cmd_to_retry = sent_message.with_increased_attempt();
 
-    let cmd_to_retry = retryable.with_increased_attempt();
-
-    let confirm = channel
-        .basic_publish(
-            "sent-message-exchange",
-            "",
-            BasicPublishOptions::default(),
-            serde_json::to_string(&cmd_to_retry).unwrap().as_bytes(),
-            properties,
+    dispatcher
+        .publish_delayed(
+            AsyncMessage::SentMessage(cmd_to_retry.clone()),
+            waiting_time,
         )
-        .await
-        .unwrap()
-        .await
-        .unwrap();
-
-    assert_eq!(confirm, Confirmation::NotRequested);
+        .await;
 
     debug!(
         "Message queued again. Attempt: {}. Delay: {:?}",
