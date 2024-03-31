@@ -4,17 +4,22 @@ use futures_lite::stream::StreamExt;
 use lapin::{options::*, types::FieldTable};
 use log::{debug, info};
 
-use server::amqp::{establish_connection_with_rabbit, Publisher, SENT_MESSAGE_QUEUE, Serializer};
+use server::amqp::{establish_connection_with_rabbit, Publisher, Serializer, SENT_MESSAGE_QUEUE};
 use server::cmd::{AsyncMessage, SentMessage};
 use server::logs::init_log;
-use server::retry::{ExponentialRetryPolicy, Retryable, RetryPolicy};
+use server::retry::{
+    ExponentialRetryPolicy, RandomizeDecoratedRetryPolicy, RetryPolicy, Retryable,
+};
 
 #[tokio::main]
 async fn main() {
     init_log();
 
     let channel = establish_connection_with_rabbit().await;
-    let retry_policy = ExponentialRetryPolicy::new(5, 2, Duration::from_secs(2));
+    let retry_policy = RandomizeDecoratedRetryPolicy::new(
+        ExponentialRetryPolicy::new(5, 2, Duration::from_secs(2)),
+        0.5,
+    );
     let mut consumer = channel
         .basic_consume(
             SENT_MESSAGE_QUEUE,
@@ -62,11 +67,7 @@ async fn main() {
     }
 }
 
-async fn retry(
-    sent_message: SentMessage,
-    retry_policy: &impl RetryPolicy,
-    publisher: &Publisher,
-) {
+async fn retry(sent_message: SentMessage, retry_policy: &impl RetryPolicy, publisher: &Publisher) {
     if !retry_policy.is_retryable(&sent_message) {
         return;
     }

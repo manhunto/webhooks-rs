@@ -1,5 +1,5 @@
-use actix_web::{HttpResponse, Responder, Result};
 use actix_web::web::{Data, Json, Path};
+use actix_web::{HttpResponse, Responder, Result};
 use log::debug;
 
 use crate::amqp::Publisher;

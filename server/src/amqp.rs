@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind};
 use lapin::options::{
     BasicPublishOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions,
 };
 use lapin::publisher_confirm::Confirmation;
 use lapin::types::{AMQPType, AMQPValue, FieldTable, ShortString};
+use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind};
 use log::info;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -88,7 +88,7 @@ impl Publisher {
             ShortString::from("x-delay"),
             AMQPValue::LongLongInt(delay.as_millis() as i64),
         )]
-            .into();
+        .into();
         let headers = FieldTable::from(btree);
         let properties = BasicProperties::default().with_headers(headers);
 
@@ -124,15 +124,18 @@ pub struct Serializer {}
 
 impl Serializer {
     pub fn deserialize<T>(binary: &[u8]) -> T
-        where T: DeserializeOwned
+    where
+        T: DeserializeOwned,
     {
         let msg = String::from_utf8_lossy(binary);
 
         serde_json::from_str(&msg).unwrap()
     }
 
-    pub fn serialize<T>(value: T) -> Vec<u8> // is possible to return &[u8] ?
-        where T: Serialize
+    pub fn serialize<T>(value: T) -> Vec<u8>
+    // is possible to return &[u8] ?
+    where
+        T: Serialize,
     {
         let string = serde_json::to_string(&value);
 

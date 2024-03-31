@@ -1,5 +1,5 @@
-use actix_web::{App, HttpServer};
 use actix_web::web::Data;
+use actix_web::{App, HttpServer};
 use log::info;
 
 use server::amqp::{establish_connection_with_rabbit, Publisher};
