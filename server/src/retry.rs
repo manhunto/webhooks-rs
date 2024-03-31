@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 use serde::Serialize;
 
 pub trait Retryable<T: Serialize = Self>: Serialize {
@@ -58,9 +58,9 @@ impl RetryPolicy for RandomizeDecoratedRetryPolicy {
     }
 
     fn get_waiting_time(&self, retryable: &impl Retryable) -> Duration {
-        let duration = self.decorated.get_waiting_time(retryable);
-        let base = duration.as_millis() as f64;
+        let base = self.decorated.get_waiting_time(retryable).as_millis() as f64;
         let diff = base * self.factor;
+
         let min = base - diff;
         let max = base + diff;
 
