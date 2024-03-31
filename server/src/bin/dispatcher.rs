@@ -8,6 +8,7 @@ use server::amqp::{Dispatcher, establish_connection_with_rabbit, SENT_MESSAGE_QU
 use server::cmd::{AsyncMessage, SentMessage};
 use server::logs::init_log;
 use server::retry::{ExponentialRetryPolicy, Retryable, RetryPolicy};
+use server::serializer::Serializer;
 
 #[tokio::main]
 async fn main() {
@@ -31,8 +32,7 @@ async fn main() {
 
     while let Some(delivery) = consumer.next().await {
         let delivery = delivery.expect("error in consumer");
-        let msg = String::from_utf8_lossy(&delivery.data);
-        let async_msg: AsyncMessage = serde_json::from_str(&msg).unwrap();
+        let async_msg: AsyncMessage = Serializer::deserialize(&delivery.data);
 
         let AsyncMessage::SentMessage(cmd) = async_msg;
 

@@ -11,6 +11,7 @@ use log::info;
 use serde_json::Value;
 
 use crate::cmd::AsyncMessage;
+use crate::serializer::Serializer;
 
 pub const SENT_MESSAGE_QUEUE: &str = "sent-message";
 const SENT_MESSAGE_EXCHANGE: &str = "sent-message-exchange";
@@ -106,7 +107,7 @@ impl Dispatcher {
                 self.resolve_exchange(&message),
                 "",
                 BasicPublishOptions::default(),
-                serde_json::to_string(&message).unwrap().as_bytes(),
+                &Serializer::serialize(message),
                 properties,
             )
             .await
