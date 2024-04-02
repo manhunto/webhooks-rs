@@ -1,5 +1,5 @@
 > [!CAUTION]
-> This project is currently in draft version and is actively being worked on.
+> The project is not finished, it is not stable and it is constantly being developed.
 
 # webhooks-rs
 
