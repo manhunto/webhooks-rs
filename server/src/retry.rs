@@ -1,9 +1,8 @@
 use std::time::Duration;
 
-use rand::{Rng, thread_rng};
-use serde::Serialize;
+use rand::{thread_rng, Rng};
 
-pub trait Retryable<T: Serialize = Self>: Serialize {
+pub trait Retryable {
     fn attempt(&self) -> usize;
     fn with_increased_attempt(&self) -> Self;
 }
