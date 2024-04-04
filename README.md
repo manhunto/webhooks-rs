@@ -24,6 +24,15 @@ an application that is high-performing, configurable and scalable.
 > This project takes part and was created thanks to the [100 Commits](https://100commitow.pl/) challenge and is my first
 > significant project written in Rust.
 
+### Features
+
+- [ ] Retry policy for failed messages
+- [ ] Circuit breaker policy for still failing endpoint
+- [ ] Rate-limit
+- [ ] Signed webhooks - server can verify that message was sent from valid server
+- [ ] SDK
+- [ ] CLI
+
 ## 👨‍💻 Development
 
 ### Prerequisites
