@@ -4,11 +4,11 @@ use futures_lite::stream::StreamExt;
 use lapin::{options::*, types::FieldTable};
 use log::{debug, info};
 
-use server::amqp::{establish_connection_with_rabbit, Publisher, Serializer, SENT_MESSAGE_QUEUE};
-use server::cmd::{AsyncMessage, SentMessage};
+use server::amqp::{establish_connection_with_rabbit, Publisher, SENT_MESSAGE_QUEUE, Serializer};
+use server::cmd::AsyncMessage;
 use server::logs::init_log;
 use server::retry::{
-    ExponentialRetryPolicy, RandomizeDecoratedRetryPolicy, RetryPolicy, Retryable,
+    ExponentialRetryPolicy, RandomizeDecoratedRetryPolicy, RetryPolicy,
 };
 
 #[tokio::main]
@@ -17,7 +17,7 @@ async fn main() {
 
     let channel = establish_connection_with_rabbit().await;
     let retry_policy = RandomizeDecoratedRetryPolicy::new(
-        ExponentialRetryPolicy::new(5, 2, Duration::from_secs(2)),
+        Box::new(ExponentialRetryPolicy::new(5, 2, Duration::from_secs(2))),
         0.5,
     );
     let mut consumer = channel
@@ -59,32 +59,21 @@ async fn main() {
 
         debug!("{}", dbg_msg);
 
-        if response.is_err() {
-            retry(cmd, &retry_policy, &publisher).await;
+        if response.is_err() && retry_policy.is_retryable(cmd.attempt) {
+            let cmd_to_retry = cmd.with_increased_attempt();
+            let duration = retry_policy.get_waiting_time(cmd.attempt);
+
+            publisher
+                .publish_delayed(AsyncMessage::SentMessage(cmd_to_retry.clone()), duration)
+                .await;
+
+            debug!(
+                "Message queued again. Attempt: {}. Delay: {:?}",
+                cmd_to_retry.attempt,
+                duration
+            );
         }
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
-}
-
-async fn retry(sent_message: SentMessage, retry_policy: &impl RetryPolicy, publisher: &Publisher) {
-    if !retry_policy.is_retryable(&sent_message) {
-        return;
-    }
-
-    let waiting_time = retry_policy.get_waiting_time(&sent_message);
-    let cmd_to_retry = sent_message.with_increased_attempt();
-
-    publisher
-        .publish_delayed(
-            AsyncMessage::SentMessage(cmd_to_retry.clone()),
-            waiting_time,
-        )
-        .await;
-
-    debug!(
-        "Message queued again. Attempt: {}. Delay: {:?}",
-        cmd_to_retry.attempt(),
-        waiting_time
-    );
 }

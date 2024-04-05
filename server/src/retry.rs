@@ -1,16 +1,11 @@
 use std::time::Duration;
 
-use rand::{thread_rng, Rng};
-
-pub trait Retryable {
-    fn attempt(&self) -> usize;
-    fn with_increased_attempt(&self) -> Self;
-}
+use rand::{Rng, thread_rng};
 
 pub trait RetryPolicy {
-    fn is_retryable(&self, retryable: &impl Retryable) -> bool;
+    fn is_retryable(&self, attempt: usize) -> bool;
 
-    fn get_waiting_time(&self, retryable: &impl Retryable) -> Duration;
+    fn get_waiting_time(&self, attempt: usize) -> Duration;
 }
 
 pub struct ExponentialRetryPolicy {
@@ -30,40 +25,39 @@ impl ExponentialRetryPolicy {
 }
 
 impl RetryPolicy for ExponentialRetryPolicy {
-    fn is_retryable(&self, retryable: &impl Retryable) -> bool {
-        retryable.attempt() < self.max_retries
+    fn is_retryable(&self, attempt: usize) -> bool {
+        attempt < self.max_retries
     }
 
-    fn get_waiting_time(&self, retryable: &impl Retryable) -> Duration {
-        self.delay * self.multiplier.pow(retryable.attempt() as u32) as u32
+    fn get_waiting_time(&self, attempt: usize) -> Duration {
+        self.delay * self.multiplier.pow(attempt as u32) as u32
     }
 }
 
 pub struct RandomizeDecoratedRetryPolicy {
-    // todo allow decorate every RetryPolicy
-    decorated: ExponentialRetryPolicy,
+    decorated: Box<dyn RetryPolicy>,
     factor: f64,
 }
 
 impl RandomizeDecoratedRetryPolicy {
-    pub fn new(decorated: ExponentialRetryPolicy, factor: f64) -> Self {
+    pub fn new(decorated: Box<dyn RetryPolicy>, factor: f64) -> Self {
         Self { decorated, factor }
     }
 }
 
 impl RetryPolicy for RandomizeDecoratedRetryPolicy {
-    fn is_retryable(&self, retryable: &impl Retryable) -> bool {
-        self.decorated.is_retryable(retryable)
+    fn is_retryable(&self, attempt: usize) -> bool {
+        self.decorated.is_retryable(attempt)
     }
 
-    fn get_waiting_time(&self, retryable: &impl Retryable) -> Duration {
-        let base = self.decorated.get_waiting_time(retryable).as_millis() as f64;
+    fn get_waiting_time(&self, attempt: usize) -> Duration {
+        let base = self.decorated.get_waiting_time(attempt).as_millis() as f64;
         let diff = base * self.factor;
 
         let min = base - diff;
         let max = base + diff;
 
-        let randomized_duration = thread_rng().gen_range(min..=max);
+        let randomized_duration = thread_rng().gen_range(min..=max); // todo extract randomizer to unit test edge cases
 
         Duration::from_millis(randomized_duration as u64)
     }

@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::events::domain::{MessageId, Payload};
-use crate::retry::Retryable;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "t", content = "c")]
@@ -27,14 +26,8 @@ impl SentMessage {
             attempt: 1,
         }
     }
-}
 
-impl Retryable for SentMessage {
-    fn attempt(&self) -> usize {
-        self.attempt
-    }
-
-    fn with_increased_attempt(&self) -> SentMessage {
+    pub fn with_increased_attempt(&self) -> SentMessage {
         Self {
             payload: self.payload.clone(),
             url: self.url.clone(),
