@@ -84,11 +84,7 @@ pub struct RetryPolicyBuilder {
 
 impl RetryPolicyBuilder {
     pub fn new() -> Self {
-        Self {
-            max_retries: None,
-            config: None,
-            random_factor: None,
-        }
+        Self { max_retries: None, config: None, random_factor: None }
     }
 
     pub fn max_retries(&mut self, max_retries: usize) -> &mut Self {
@@ -128,5 +124,11 @@ impl RetryPolicyBuilder {
         }
 
         Ok(policy)
+    }
+}
+
+impl Default for RetryPolicyBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
