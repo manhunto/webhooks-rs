@@ -7,19 +7,20 @@ use log::{debug, info};
 use server::amqp::{establish_connection_with_rabbit, Publisher, SENT_MESSAGE_QUEUE, Serializer};
 use server::cmd::AsyncMessage;
 use server::logs::init_log;
-use server::retry::{
-    ExponentialRetryPolicy, RandomizeDecoratedRetryPolicy, RetryPolicy,
-};
+use server::retry::RetryPolicyBuilder;
 
 #[tokio::main]
 async fn main() {
     init_log();
 
+    let retry_policy = RetryPolicyBuilder::new()
+        .max_retries(5)
+        .exponential(2, Duration::from_secs(2))
+        .randomize(0.5)
+        .build()
+        .unwrap();
+
     let channel = establish_connection_with_rabbit().await;
-    let retry_policy = RandomizeDecoratedRetryPolicy::new(
-        Box::new(ExponentialRetryPolicy::new(5, 2, Duration::from_secs(2))),
-        0.5,
-    );
     let mut consumer = channel
         .basic_consume(
             SENT_MESSAGE_QUEUE,
@@ -69,8 +70,7 @@ async fn main() {
 
             debug!(
                 "Message queued again. Attempt: {}. Delay: {:?}",
-                cmd_to_retry.attempt,
-                duration
+                cmd_to_retry.attempt, duration
             );
         }
 

@@ -2,20 +2,22 @@ use std::time::Duration;
 
 use rand::{Rng, thread_rng};
 
+use crate::retry::RetryPolicyConfig::Exponential;
+
 pub trait RetryPolicy {
     fn is_retryable(&self, attempt: usize) -> bool;
 
     fn get_waiting_time(&self, attempt: usize) -> Duration;
 }
 
-pub struct ExponentialRetryPolicy {
+struct ExponentialRetryPolicy {
     max_retries: usize,
     multiplier: usize,
     delay: Duration,
 }
 
 impl ExponentialRetryPolicy {
-    pub fn new(max_retries: usize, multiplier: usize, delay: Duration) -> Self {
+    fn new(max_retries: usize, multiplier: usize, delay: Duration) -> Self {
         Self {
             max_retries,
             multiplier,
@@ -34,7 +36,7 @@ impl RetryPolicy for ExponentialRetryPolicy {
     }
 }
 
-pub struct RandomizeDecoratedRetryPolicy {
+struct RandomizeDecoratedRetryPolicy {
     decorated: Box<dyn RetryPolicy>,
     factor: f64,
 }
@@ -60,5 +62,71 @@ impl RetryPolicy for RandomizeDecoratedRetryPolicy {
         let randomized_duration = thread_rng().gen_range(min..=max); // todo extract randomizer to unit test edge cases
 
         Duration::from_millis(randomized_duration as u64)
+    }
+}
+
+#[derive(Clone)]
+enum RetryPolicyConfig {
+    Exponential(ExponentialConfig),
+}
+
+#[derive(Clone)]
+struct ExponentialConfig {
+    multiplier: usize,
+    delay: Duration,
+}
+
+pub struct RetryPolicyBuilder {
+    max_retries: Option<usize>,
+    config: Option<RetryPolicyConfig>,
+    random_factor: Option<f64>,
+}
+
+impl RetryPolicyBuilder {
+    pub fn new() -> Self {
+        Self {
+            max_retries: None,
+            config: None,
+            random_factor: None,
+        }
+    }
+
+    pub fn max_retries(&mut self, max_retries: usize) -> &mut Self {
+        self.max_retries = Some(max_retries);
+        self
+    }
+
+    pub fn exponential(&mut self, multiplier: usize, delay: Duration) -> &mut Self {
+        self.config = Some(Exponential(ExponentialConfig { multiplier, delay }));
+        self
+    }
+
+    pub fn randomize(&mut self, factor: f64) -> &mut Self {
+        self.random_factor = Some(factor);
+        self
+    }
+
+    pub fn build(&self) -> Result<Box<dyn RetryPolicy>, String> {
+        if self.max_retries.is_none() {
+            return Err(String::from("Max retries should be set"));
+        }
+
+        if self.config.is_none() {
+            return Err(String::from("Any base policy wasn't chosen"));
+        }
+
+        let mut policy: Box<dyn RetryPolicy> = match self.config.clone().unwrap() {
+            Exponential(config) => Box::new(ExponentialRetryPolicy::new(
+                self.max_retries.unwrap(),
+                config.multiplier,
+                config.delay,
+            )),
+        };
+
+        if let Some(factor) = self.random_factor {
+            policy = Box::new(RandomizeDecoratedRetryPolicy::new(policy, factor));
+        }
+
+        Ok(policy)
     }
 }
