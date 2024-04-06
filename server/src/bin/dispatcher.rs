@@ -4,7 +4,7 @@ use futures_lite::stream::StreamExt;
 use lapin::{options::*, types::FieldTable};
 use log::{debug, info};
 
-use server::amqp::{establish_connection_with_rabbit, Publisher, SENT_MESSAGE_QUEUE, Serializer};
+use server::amqp::{establish_connection_with_rabbit, Publisher, Serializer, SENT_MESSAGE_QUEUE};
 use server::cmd::AsyncMessage;
 use server::logs::init_log;
 use server::retry::RetryPolicyBuilder;

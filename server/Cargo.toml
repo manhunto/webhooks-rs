@@ -24,6 +24,9 @@ svix-ksuid = { version = "^0.8.0", features = ["serde"] }
 tokio = { version = "1.37.0", features = ["full"] }
 url = "2.5.0"
 
+[dev-dependencies]
+test-case = "3.3.1"
+
 [[bin]]
 name = "server"
 path = "src/bin/server.rs"
