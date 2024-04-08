@@ -18,7 +18,7 @@ jobs:
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --all-targets --verbose
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +26,7 @@ jobs:
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --workspace --verbose
   lint:
     runs-on: ubuntu-latest
     steps:
