@@ -15,18 +15,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache setup
+        uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build --verbose
   tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache setup
+        uses: Swatinem/rust-cache@v2
       - name: Run tests
         run: cargo test --verbose
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache setup
+        uses: Swatinem/rust-cache@v2
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features
   format:
