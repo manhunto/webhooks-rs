@@ -13,7 +13,7 @@ default:
     @just --list
 
 build:
-    cargo build
+    cargo build --all-targets
 
 format:
     cargo fmt --all
@@ -35,10 +35,10 @@ run-destination-server *OPTIONS:
     cargo run --example destination-server {{ OPTIONS }}
 
 test:
-    cargo test
+    cargo test --workspace
 
 clippy:
-    cargo clippy
+    cargo clippy --all-targets --all-features
 
 docker-up:
     docker compose up --detach
