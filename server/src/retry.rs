@@ -55,13 +55,13 @@ trait RetryPolicy {
 }
 
 struct ExponentialRetryPolicy {
-    multiplier: usize,
     delay: Duration,
+    multiplier: usize,
 }
 
 impl ExponentialRetryPolicy {
-    fn new(multiplier: usize, delay: Duration) -> Self {
-        Self { multiplier, delay }
+    fn new(delay: Duration, multiplier: usize) -> Self {
+        Self { delay, multiplier }
     }
 }
 
@@ -139,6 +139,7 @@ impl RetryPolicy for ConstantRetryPolicy {
     }
 }
 
+// todo use configs to construct retry policies
 #[derive(Clone)]
 enum RetryPolicyConfig {
     Exponential(ExponentialConfig),
@@ -202,7 +203,7 @@ impl RetryPolicyBuilder {
 
         let mut delay_policy: Box<dyn RetryPolicy> = match self.config.clone().unwrap() {
             Exponential(config) => {
-                Box::new(ExponentialRetryPolicy::new(config.multiplier, config.delay))
+                Box::new(ExponentialRetryPolicy::new(config.delay, config.multiplier))
             }
             Constant(config) => Box::new(ConstantRetryPolicy::new(config.delay)),
         };
@@ -234,9 +235,29 @@ mod tests {
     use test_case::test_case;
 
     use crate::retry::{
-        ConstantRetryPolicy, RandomGenerator, RandomizeDecoratedRetryPolicy, RetryPolicy,
+        ConstantRetryPolicy, ExponentialRetryPolicy, RandomGenerator,
+        RandomizeDecoratedRetryPolicy, RetryPolicy,
     };
 
+    // todo write tests for builder with the same cases
+    #[test_case(1, 2, 1, 2)]
+    #[test_case(1, 2, 2, 4)]
+    #[test_case(1, 2, 3, 8)]
+    #[test_case(1, 2, 4, 16)]
+    #[test_case(2, 3, 1, 6)]
+    #[test_case(2, 3, 3, 54)]
+    fn exponential_retry_policy(
+        delay_in_secs: u64,
+        multiplier: usize,
+        attempt: usize,
+        result: u64,
+    ) {
+        let sut = ExponentialRetryPolicy::new(Duration::from_secs(delay_in_secs), multiplier);
+
+        assert_eq!(Duration::from_secs(result), sut.get_waiting_time(attempt));
+    }
+
+    // todo write tests for builder with the same cases
     #[test_case(5000, 0.5, 2500, 7500; "5 sec, 0.5 factor")]
     #[test_case(5000, 0.25, 3750, 6250; "5 sec, 0.25 factor")]
     #[test_case(3000, 0.1, 2700, 3300; "3 sec, 0.1 factor")]
