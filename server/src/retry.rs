@@ -4,33 +4,68 @@ use rand::{thread_rng, Rng};
 
 use crate::retry::RetryPolicyConfig::{Constant, Exponential};
 
-pub trait RetryPolicy {
-    fn is_retryable(&self, attempt: usize) -> bool; // todo extract should retry trait or something
+pub struct Retry {
+    should_retry_policy: Box<dyn ShouldRetryPolicy>,
+    delay_retry_policy: Box<dyn RetryPolicy>,
+}
 
+impl Retry {
+    fn new(
+        should_retry_policy: Box<dyn ShouldRetryPolicy>,
+        delay_retry_policy: Box<dyn RetryPolicy>,
+    ) -> Self {
+        Self {
+            should_retry_policy,
+            delay_retry_policy,
+        }
+    }
+
+    pub fn is_retryable(&self, attempt: usize) -> bool {
+        self.should_retry_policy.is_retryable(attempt)
+    }
+
+    pub fn get_waiting_time(&self, attempt: usize) -> Duration {
+        self.delay_retry_policy.get_waiting_time(attempt)
+    }
+}
+
+pub trait ShouldRetryPolicy {
+    fn is_retryable(&self, attempt: usize) -> bool;
+}
+
+struct MaxAttemptsShouldRetryPolicy {
+    max_retries: usize,
+}
+
+impl MaxAttemptsShouldRetryPolicy {
+    fn new(max_retries: usize) -> Self {
+        Self { max_retries }
+    }
+}
+
+impl ShouldRetryPolicy for MaxAttemptsShouldRetryPolicy {
+    fn is_retryable(&self, attempt: usize) -> bool {
+        attempt < self.max_retries
+    }
+}
+
+// todo extract Attempt, validation at least 1
+trait RetryPolicy {
     fn get_waiting_time(&self, attempt: usize) -> Duration;
 }
 
 struct ExponentialRetryPolicy {
-    max_retries: usize,
     multiplier: usize,
     delay: Duration,
 }
 
 impl ExponentialRetryPolicy {
-    fn new(max_retries: usize, multiplier: usize, delay: Duration) -> Self {
-        Self {
-            max_retries,
-            multiplier,
-            delay,
-        }
+    fn new(multiplier: usize, delay: Duration) -> Self {
+        Self { multiplier, delay }
     }
 }
 
 impl RetryPolicy for ExponentialRetryPolicy {
-    fn is_retryable(&self, attempt: usize) -> bool {
-        attempt < self.max_retries
-    }
-
     fn get_waiting_time(&self, attempt: usize) -> Duration {
         self.delay * self.multiplier.pow(attempt as u32) as u32
     }
@@ -75,10 +110,6 @@ impl RandomizeDecoratedRetryPolicy {
 }
 
 impl RetryPolicy for RandomizeDecoratedRetryPolicy {
-    fn is_retryable(&self, attempt: usize) -> bool {
-        self.decorated.is_retryable(attempt)
-    }
-
     fn get_waiting_time(&self, attempt: usize) -> Duration {
         let base = self.decorated.get_waiting_time(attempt).as_millis() as f64;
         let diff = base * self.factor;
@@ -93,21 +124,16 @@ impl RetryPolicy for RandomizeDecoratedRetryPolicy {
 }
 
 struct ConstantRetryPolicy {
-    max_retries: usize,
     delay: Duration,
 }
 
 impl ConstantRetryPolicy {
-    fn new(max_retries: usize, delay: Duration) -> Self {
-        Self { max_retries, delay }
+    fn new(delay: Duration) -> Self {
+        Self { delay }
     }
 }
 
 impl RetryPolicy for ConstantRetryPolicy {
-    fn is_retryable(&self, attempt: usize) -> bool {
-        attempt < self.max_retries
-    }
-
     fn get_waiting_time(&self, _attempt: usize) -> Duration {
         self.delay
     }
@@ -165,7 +191,7 @@ impl RetryPolicyBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<Box<dyn RetryPolicy>, String> {
+    pub fn build(&self) -> Result<Retry, String> {
         if self.max_retries.is_none() {
             return Err(String::from("Max retries should be set"));
         }
@@ -174,27 +200,24 @@ impl RetryPolicyBuilder {
             return Err(String::from("Any base policy wasn't chosen"));
         }
 
-        let mut policy: Box<dyn RetryPolicy> = match self.config.clone().unwrap() {
-            Exponential(config) => Box::new(ExponentialRetryPolicy::new(
-                self.max_retries.unwrap(),
-                config.multiplier,
-                config.delay,
-            )),
-            Constant(config) => Box::new(ConstantRetryPolicy::new(
-                self.max_retries.unwrap(),
-                config.delay,
-            )),
+        let mut delay_policy: Box<dyn RetryPolicy> = match self.config.clone().unwrap() {
+            Exponential(config) => {
+                Box::new(ExponentialRetryPolicy::new(config.multiplier, config.delay))
+            }
+            Constant(config) => Box::new(ConstantRetryPolicy::new(config.delay)),
         };
 
         if let Some(factor) = self.random_factor {
-            policy = Box::new(RandomizeDecoratedRetryPolicy::new(
+            delay_policy = Box::new(RandomizeDecoratedRetryPolicy::new(
                 Box::new(RandCrateRandomGenerator::new()),
-                policy,
+                delay_policy,
                 factor,
             ));
         }
 
-        Ok(policy)
+        let should_retry = Box::new(MaxAttemptsShouldRetryPolicy::new(self.max_retries.unwrap()));
+
+        Ok(Retry::new(should_retry, delay_policy))
     }
 }
 
@@ -236,7 +259,7 @@ mod tests {
         random_generator: Box<dyn RandomGenerator>,
         factor: f64,
     ) -> RandomizeDecoratedRetryPolicy {
-        let constant = Box::new(ConstantRetryPolicy::new(1, Duration::from_millis(delay)));
+        let constant = Box::new(ConstantRetryPolicy::new(Duration::from_millis(delay)));
 
         RandomizeDecoratedRetryPolicy::new(random_generator, constant, factor)
     }
