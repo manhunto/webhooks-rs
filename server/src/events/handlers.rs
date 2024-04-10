@@ -4,7 +4,7 @@ use log::debug;
 
 use crate::amqp::Publisher;
 use crate::cmd::{AsyncMessage, SentMessage};
-use crate::configuration::domain::{ApplicationId, Topic};
+use crate::configuration::domain::{ApplicationId, Endpoint, Topic};
 use crate::error::ResponseError;
 use crate::events::domain::{Message, Payload};
 use crate::events::models::CreateMessageRequest;
@@ -33,15 +33,21 @@ pub async fn create_message_handler(
         storage.messages.count()
     );
 
-    let endpoints = storage.endpoints.for_topic(&app_id, &msg.topic);
+    let endpoints: Vec<Endpoint> = storage.endpoints.for_topic(&app_id, &msg.topic);
+    let endpoints_count = endpoints.len();
+
+    let active_endpoints: Vec<Endpoint> =
+        endpoints.into_iter().filter(|en| en.is_active()).collect();
+
     debug!(
-        "in app {} - {} endpoints found for message {}",
+        "in app {} - {} ({}) endpoints found for message {}",
         msg.app_id,
-        endpoints.len(),
+        active_endpoints.len(),
+        endpoints_count,
         msg.id
     );
 
-    for endpoint in endpoints {
+    for endpoint in active_endpoints {
         debug!("{} sending to {}", msg.id, endpoint.url);
 
         let cmd = SentMessage::new(msg.payload.clone(), endpoint.url, msg.id.clone());

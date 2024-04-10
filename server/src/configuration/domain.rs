@@ -40,6 +40,15 @@ pub enum EndpointStatus {
     DisabledManually,
 }
 
+impl EndpointStatus {
+    fn is_active(&self) -> bool {
+        match self {
+            EndpointStatus::Initial => true,
+            EndpointStatus::DisabledManually => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Endpoint {
     pub id: EndpointId,
@@ -58,6 +67,10 @@ impl Endpoint {
             app_id,
             status: EndpointStatus::Initial,
         }
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.status.is_active()
     }
 
     pub fn disable_manually(&mut self) {
@@ -92,7 +105,7 @@ impl Display for Topic {
 
 #[cfg(test)]
 mod tests {
-    use crate::configuration::domain::Topic;
+    use crate::configuration::domain::{ApplicationId, Endpoint, Topic};
 
     #[test]
     fn topic_name_construct() {
@@ -100,5 +113,18 @@ mod tests {
         assert!(Topic::new("customer-updated".to_string()).is_ok());
         assert!(Topic::new("customer.updated".to_string()).is_ok());
         assert!(Topic::new("customer.updated2".to_string()).is_err());
+    }
+
+    #[test]
+    fn endpoint_is_active() {
+        let mut endpoint = Endpoint::new(
+            "https://localhost".to_string(),
+            ApplicationId::new(),
+            vec![Topic::new("test".to_string()).unwrap()],
+        );
+        assert!(endpoint.is_active());
+
+        endpoint.disable_manually();
+        assert!(!endpoint.is_active());
     }
 }

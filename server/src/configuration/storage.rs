@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 use crate::configuration::domain::{Application, ApplicationId, Endpoint, EndpointId, Topic};
@@ -68,24 +69,22 @@ pub trait EndpointStorage {
 }
 
 pub struct InMemoryEndpointStorage {
-    endpoints: Mutex<Vec<Endpoint>>,
+    endpoints: Mutex<HashMap<String, Endpoint>>,
 }
 
 impl InMemoryEndpointStorage {
     pub fn new() -> Self {
         Self {
-            endpoints: Mutex::new(vec![]),
+            endpoints: Mutex::new(HashMap::new()),
         }
     }
 }
 
 impl EndpointStorage for InMemoryEndpointStorage {
     fn save(&self, endpoint: Endpoint) {
-        if self.get(&endpoint.id).is_err() {
-            let mut endpoints = self.endpoints.lock().unwrap();
+        let mut endpoints = self.endpoints.lock().unwrap();
 
-            endpoints.push(endpoint.clone());
-        }
+        endpoints.insert(endpoint.id.to_string(), endpoint.clone());
     }
 
     fn count(&self) -> usize {
@@ -98,11 +97,12 @@ impl EndpointStorage for InMemoryEndpointStorage {
         let endpoints = self.endpoints.lock().unwrap();
 
         endpoints
+            .values()
             .clone()
-            .into_iter()
             .filter(|endpoint| {
                 endpoint.app_id.eq(application_id) && endpoint.topics.contains(topic)
             })
+            .cloned()
             .collect()
     }
 
@@ -110,9 +110,9 @@ impl EndpointStorage for InMemoryEndpointStorage {
         let endpoints = self.endpoints.lock().unwrap();
 
         endpoints
-            .clone()
-            .into_iter()
+            .values()
             .find(|endpoint| endpoint.id.eq(endpoint_id))
             .ok_or_else(|| EntityNotFound("Endpoint not found".to_string()))
+            .cloned()
     }
 }
