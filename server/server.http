@@ -24,6 +24,10 @@ Content-Type: application/json
   ]
 }
 
+> {%
+    client.global.set("endpoint_id", response.body.id);
+%}
+
 ### Create message
 POST {{url}}/v1/application/{{app_id}}/message
 Content-Type: application/json
@@ -40,3 +44,7 @@ Content-Type: application/json
     }
   }
 }
+
+### Disable endpoint
+POST {{url}}/v1/application/{{app_id}}/endpoint/{{endpoint_id}}/disable
+Content-Type: application/json

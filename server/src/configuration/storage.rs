@@ -1,13 +1,15 @@
-use crate::configuration::domain::{Application, ApplicationId, Endpoint, Topic};
+use std::sync::Mutex;
+
+use crate::configuration::domain::{Application, ApplicationId, Endpoint, EndpointId, Topic};
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
-use std::sync::Mutex;
 
 pub trait ApplicationStorage {
     fn save(&self, app: Application);
 
     fn count(&self) -> usize;
 
+    // todo remove, unused
     fn exists(&self, app_id: &ApplicationId) -> bool;
 
     fn get(&self, app_id: &ApplicationId) -> Result<Application, Error>;
@@ -61,6 +63,8 @@ pub trait EndpointStorage {
     fn count(&self) -> usize;
 
     fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint>;
+
+    fn get(&self, endpoint_id: &EndpointId) -> Result<Endpoint, Error>;
 }
 
 pub struct InMemoryEndpointStorage {
@@ -76,10 +80,12 @@ impl InMemoryEndpointStorage {
 }
 
 impl EndpointStorage for InMemoryEndpointStorage {
-    fn save(&self, app: Endpoint) {
-        let mut endpoints = self.endpoints.lock().unwrap();
+    fn save(&self, endpoint: Endpoint) {
+        if self.get(&endpoint.id).is_err() {
+            let mut endpoints = self.endpoints.lock().unwrap();
 
-        endpoints.push(app);
+            endpoints.push(endpoint.clone());
+        }
     }
 
     fn count(&self) -> usize {
@@ -98,5 +104,15 @@ impl EndpointStorage for InMemoryEndpointStorage {
                 endpoint.app_id.eq(application_id) && endpoint.topics.contains(topic)
             })
             .collect()
+    }
+
+    fn get(&self, endpoint_id: &EndpointId) -> Result<Endpoint, Error> {
+        let endpoints = self.endpoints.lock().unwrap();
+
+        endpoints
+            .clone()
+            .into_iter()
+            .find(|endpoint| endpoint.id.eq(endpoint_id))
+            .ok_or_else(|| EntityNotFound("Endpoint not found".to_string()))
     }
 }

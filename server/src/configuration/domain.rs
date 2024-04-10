@@ -1,9 +1,11 @@
-use crate::error::Error;
-use crate::error::Error::InvalidArgument;
+use std::fmt::{Display, Formatter};
+
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::fmt::{Display, Formatter};
 use url::Url;
+
+use crate::error::Error;
+use crate::error::Error::InvalidArgument;
 
 #[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
 #[prefix = "app"]
@@ -26,10 +28,16 @@ impl Application {
     }
 }
 
-#[derive(Debug, Clone, derive::Ksuid)]
+#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
 #[prefix = "ep"]
 pub struct EndpointId {
     id: String,
+}
+
+#[derive(Clone, Debug)]
+pub enum EndpointStatus {
+    Initial,
+    DisabledManually,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +46,7 @@ pub struct Endpoint {
     pub app_id: ApplicationId,
     pub url: Url,
     pub topics: Vec<Topic>,
+    pub status: EndpointStatus,
 }
 
 impl Endpoint {
@@ -47,7 +56,12 @@ impl Endpoint {
             url: Url::parse(url.as_str()).unwrap(),
             topics,
             app_id,
+            status: EndpointStatus::Initial,
         }
+    }
+
+    pub fn disable_manually(&mut self) {
+        self.status = EndpointStatus::DisabledManually;
     }
 }
 

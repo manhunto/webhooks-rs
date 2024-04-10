@@ -1,13 +1,14 @@
-use crate::configuration::domain::{Application, ApplicationId, Endpoint, Topic};
+use actix_web::web::{Data, Json, Path};
+use actix_web::{HttpResponse, Responder};
+use itertools::Itertools;
+use log::debug;
+
+use crate::configuration::domain::{Application, ApplicationId, Endpoint, EndpointId, Topic};
 use crate::configuration::models::{
     CreateAppRequest, CreateAppResponse, CreateEndpointRequest, CreateEndpointResponse,
 };
 use crate::error::ResponseError;
 use crate::storage::Storage;
-use actix_web::web::{Data, Json, Path};
-use actix_web::{HttpResponse, Responder};
-use itertools::Itertools;
-use log::debug;
 
 pub async fn create_application_handler(
     storage: Data<Storage>,
@@ -51,10 +52,36 @@ pub async fn create_endpoint_handler(
     debug!(
         "Endpoint created: {:?}, count: {}",
         endpoint,
-        storage.applications.count()
+        storage.endpoints.count()
     );
 
     let response = CreateEndpointResponse::from(endpoint);
 
     Ok(HttpResponse::Created().json(response))
+}
+
+pub async fn disable_endpoint_handler(
+    storage: Data<Storage>,
+    path: Path<(String, String)>,
+) -> Result<impl Responder, ResponseError> {
+    let (app_id, endpoint_id) = path.into_inner();
+
+    let app_id = ApplicationId::try_from(app_id).unwrap();
+    let app = storage.applications.get(&app_id)?;
+
+    let endpoint_id = EndpointId::try_from(endpoint_id).unwrap();
+    let mut endpoint = storage.endpoints.get(&endpoint_id)?;
+
+    if !endpoint.app_id.eq(&app.id) {
+        // todo get endpoint with one query - app_id + endpoint_id
+        return Err(ResponseError::NotFound("Endpoint not found".to_string()));
+    }
+
+    endpoint.disable_manually();
+
+    storage.endpoints.save(endpoint);
+
+    debug!("Endpoint {} disabled", endpoint_id);
+
+    Ok(HttpResponse::NoContent())
 }
