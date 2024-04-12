@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::time::Duration;
 
 use futures_lite::stream::StreamExt;
@@ -19,6 +20,8 @@ async fn main() {
         .randomize(0.5)
         .build()
         .unwrap();
+
+    let mut fail_map: HashMap<String, u32> = HashMap::new();
 
     let channel = establish_connection_with_rabbit().await;
     let mut consumer = channel
@@ -60,18 +63,33 @@ async fn main() {
 
         debug!("{}", dbg_msg);
 
-        if response.is_err() && retry_policy.is_retryable(cmd.attempt) {
-            let cmd_to_retry = cmd.with_increased_attempt();
-            let duration = retry_policy.get_waiting_time(cmd.attempt);
+        if response.is_err() {
+            if retry_policy.is_retryable(cmd.attempt) {
+                let cmd_to_retry = cmd.with_increased_attempt();
+                let duration = retry_policy.get_waiting_time(cmd.attempt);
 
-            publisher
-                .publish_delayed(AsyncMessage::SentMessage(cmd_to_retry.clone()), duration)
-                .await;
+                publisher
+                    .publish_delayed(AsyncMessage::SentMessage(cmd_to_retry.clone()), duration)
+                    .await;
 
-            debug!(
-                "Message queued again. Attempt: {}. Delay: {:?}",
-                cmd_to_retry.attempt, duration
-            );
+                debug!(
+                    "Message queued again. Attempt: {}. Delay: {:?}",
+                    cmd_to_retry.attempt, duration
+                );
+            }
+
+            let key = cmd.endpoint_id.to_string();
+
+            *fail_map.entry(key.clone()).or_insert(0) += 1;
+
+            let fail_count = fail_map.get(&key).unwrap();
+
+            debug!("Endpoint {} current fail count: {}", key, fail_count);
+
+            if fail_count.ge(&5) {
+                // todo mark endpoint as disabled
+                debug!("Endpoint {} reached a limit and is disabled", key);
+            }
         }
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
