@@ -82,13 +82,13 @@ async fn main() {
 
             *fail_map.entry(key.clone()).or_insert(0) += 1;
 
-            let fail_count = fail_map.get(&key).unwrap();
+            if let Some(fail_count) = fail_map.get(&key) {
+                debug!("Endpoint {} current fail count: {}", key, fail_count);
 
-            debug!("Endpoint {} current fail count: {}", key, fail_count);
-
-            if fail_count.ge(&5) {
-                // todo mark endpoint as disabled
-                debug!("Endpoint {} reached a limit and is disabled", key);
+                if fail_count.ge(&5) {
+                    // todo mark endpoint as disabled
+                    debug!("Endpoint {} reached a limit and is disabled", key);
+                }
             }
         }
 
