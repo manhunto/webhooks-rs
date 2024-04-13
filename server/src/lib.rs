@@ -1,4 +1,5 @@
 pub mod amqp;
+pub mod circuit_breaker;
 pub mod cmd;
 mod configuration;
 mod error;
