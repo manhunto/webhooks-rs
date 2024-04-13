@@ -38,7 +38,7 @@ test:
     cargo test --workspace
 
 clippy:
-    cargo clippy --all-targets --all-features
+    cargo clippy --all-targets --all-features -- -D warnings
 
 docker-up:
     docker compose up --detach
