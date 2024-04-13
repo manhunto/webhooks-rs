@@ -46,41 +46,54 @@ async fn main() {
 
         info!("message consumed: {:?}", cmd);
 
-        let response = reqwest::Client::new()
-            .post(&cmd.url)
-            .json(&cmd.payload.as_str())
-            .send()
-            .await;
-
-        let dbg_msg = match &response {
-            Ok(res) => format!("Success! {}", res.status()),
-            Err(res) => {
-                let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
-
-                format!("Error response! Status: {}, Error: {}", status, res)
-            }
-        };
-
-        debug!("{}", dbg_msg);
-
+        // todo allow to revive endpoint, check endpoint status and reset circuit breaker
         let key = cmd.endpoint_id.to_string();
-        match circuit_breaker.call(key, response) {
-            State::Close => {
-                // todo mark endpoint as disabled
-            }
-            State::Open => {
-                if retry_policy.is_retryable(cmd.attempt) {
-                    let cmd_to_retry = cmd.with_increased_attempt();
-                    let duration = retry_policy.get_waiting_time(cmd.attempt);
+        if circuit_breaker.is_call_permitted(key.clone()) {
+            debug!(
+                "Endpoint {} is closed. Message {} skipped.",
+                key, cmd.msg_id
+            );
 
-                    publisher
-                        .publish_delayed(AsyncMessage::SentMessage(cmd_to_retry.clone()), duration)
-                        .await;
+            // todo do something with message? add to some "not delivered" bucket
+        } else {
+            let response = reqwest::Client::new()
+                .post(&cmd.url)
+                .json(&cmd.payload.as_str())
+                .send()
+                .await;
 
-                    debug!(
-                        "Message queued again. Attempt: {}. Delay: {:?}",
-                        cmd_to_retry.attempt, duration
-                    );
+            let dbg_msg = match &response {
+                Ok(res) => format!("Success! {}", res.status()),
+                Err(res) => {
+                    let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
+
+                    format!("Error response! Status: {}, Error: {}", status, res)
+                }
+            };
+
+            debug!("{}", dbg_msg);
+
+            match circuit_breaker.call(key, response) {
+                State::Close => {
+                    // todo mark endpoint as disabled
+                }
+                State::Open => {
+                    if retry_policy.is_retryable(cmd.attempt) {
+                        let cmd_to_retry = cmd.with_increased_attempt();
+                        let duration = retry_policy.get_waiting_time(cmd.attempt);
+
+                        publisher
+                            .publish_delayed(
+                                AsyncMessage::SentMessage(cmd_to_retry.clone()),
+                                duration,
+                            )
+                            .await;
+
+                        debug!(
+                            "Message queued again. Attempt: {}. Delay: {:?}",
+                            cmd_to_retry.attempt, duration
+                        );
+                    }
                 }
             }
         }
