@@ -8,6 +8,7 @@ default-run = "server"
 [dependencies]
 actix-web = "4.5.1"
 derive = { path = "../derive" }
+dotenv = "0.15.0"
 futures = "0.3.30"
 futures-lite = "2.3.0"
 itertools = "0.12.1"

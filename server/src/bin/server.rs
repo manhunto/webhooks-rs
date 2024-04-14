@@ -1,19 +1,22 @@
 use actix_web::web::Data;
 use actix_web::{rt, App, HttpServer};
+use dotenv::dotenv;
 use log::info;
 
 use server::amqp::{establish_connection_with_rabbit, Publisher};
 use server::dispatch_consumer::consume;
+use server::env::env_with_default;
 use server::logs::init_log;
 use server::routes::routes;
 use server::storage::Storage;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     init_log();
 
     let ip = "127.0.0.1";
-    let port = 8090;
+    let port: u16 = env_with_default("SERVER_PORT", 8090);
 
     let storage = Data::new(Storage::new());
     let channel = establish_connection_with_rabbit().await;
