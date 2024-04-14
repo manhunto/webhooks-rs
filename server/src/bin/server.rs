@@ -1,8 +1,9 @@
 use actix_web::web::Data;
-use actix_web::{App, HttpServer};
+use actix_web::{rt, App, HttpServer};
 use log::info;
 
 use server::amqp::{establish_connection_with_rabbit, Publisher};
+use server::dispatch_consumer::consume;
 use server::logs::init_log;
 use server::routes::routes;
 use server::storage::Storage;
@@ -16,11 +17,11 @@ async fn main() -> std::io::Result<()> {
 
     let storage = Data::new(Storage::new());
     let channel = establish_connection_with_rabbit().await;
-    let dispatcher = Data::new(Publisher::new(channel));
+    let publisher = Data::new(Publisher::new(channel.clone()));
     let app = move || {
         App::new()
             .app_data(storage.clone())
-            .app_data(dispatcher.clone())
+            .app_data(publisher.clone())
             .configure(routes)
     };
 
@@ -28,6 +29,8 @@ async fn main() -> std::io::Result<()> {
         "Webhooks server is listening for requests on {}:{}",
         ip, port
     );
+
+    rt::spawn(async move { consume(channel, "dispatcher-in-server").await });
 
     HttpServer::new(app).bind((ip, port))?.run().await
 }
