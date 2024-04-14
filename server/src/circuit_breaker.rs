@@ -4,8 +4,14 @@ use log::debug;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum State {
-    Close,
+    Closed,
     Open,
+}
+
+pub enum Error<T> {
+    Rejected,
+    Open(T),
+    Closed(T),
 }
 
 // todo extract policy
@@ -24,23 +30,26 @@ impl CircuitBreaker {
     }
 
     pub fn is_call_permitted(&self, key: String) -> bool {
-        self.states.get(&key).unwrap_or(&State::Open) == &State::Close
+        self.states.get(&key).unwrap_or(&State::Open) == &State::Closed
     }
 
-    pub fn call<T, E>(&mut self, key: String, result: Result<T, E>) -> State {
+    pub fn call<T, E, F>(&mut self, key: String, function: F) -> Result<T, Error<E>>
+    where
+        F: FnOnce() -> Result<T, E>,
+    {
         if self.is_call_permitted(key.clone()) {
             debug!("Service {} closed", key);
 
-            return State::Close;
+            return Err(Error::Rejected);
         }
 
-        match result {
-            Ok(_) => {
+        match function() {
+            Ok(ok) => {
                 self.storage.entry(key.clone()).or_insert(0);
 
-                self.update_and_return(key, State::Open)
+                Ok(ok)
             }
-            Err(_) => {
+            Err(err) => {
                 *self.storage.entry(key.clone()).or_insert(0) += 1;
 
                 if let Some(fail_count) = self.storage.get(&key) {
@@ -49,19 +58,19 @@ impl CircuitBreaker {
                     if fail_count.ge(&3) {
                         debug!("Service {} reached a limit and is closed", key);
 
-                        return self.update_and_return(key, State::Close);
+                        self.update(key, State::Closed);
+
+                        return Err(Error::Closed(err));
                     }
                 }
 
-                self.update_and_return(key, State::Open)
+                Err(Error::Open(err))
             }
         }
     }
 
-    fn update_and_return(&mut self, key: String, state: State) -> State {
-        *self.states.entry(key).or_insert(State::Open) = state;
-
-        state
+    fn update(&mut self, key: String, state: State) {
+        *self.states.entry(key).or_insert(State::Open) = state
     }
 }
 
