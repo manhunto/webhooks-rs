@@ -2,35 +2,55 @@ use std::env;
 use std::env::VarError;
 
 pub trait EnvVar<T> {
-    fn env(key: &str) -> T;
+    fn env<K>(key: K) -> T
+    where
+        K: AsRef<str>;
 
-    fn env_or(key: &str, default: T) -> T;
+    fn env_or<K>(key: K, default: T) -> T
+    where
+        K: AsRef<str>;
 }
 
 pub struct Env {}
 
 impl Env {
-    fn get_env(key: &str) -> Result<String, VarError> {
-        env::var(key)
+    fn get_env<K>(key: K) -> Result<String, VarError>
+    where
+        K: AsRef<str>,
+    {
+        env::var(key.as_ref())
     }
 }
 
 impl EnvVar<String> for Env {
-    fn env(key: &str) -> String {
-        Self::get_env(key).unwrap_or_else(|_| panic!("env {} is not configured", key))
+    fn env<K>(key: K) -> String
+    where
+        K: AsRef<str>,
+    {
+        Self::get_env(key.as_ref())
+            .unwrap_or_else(|_| panic!("env {} is not configured", key.as_ref()))
     }
 
-    fn env_or(key: &str, default: String) -> String {
+    fn env_or<K>(key: K, default: String) -> String
+    where
+        K: AsRef<str>,
+    {
         Self::get_env(key).unwrap_or(default)
     }
 }
 
 impl EnvVar<usize> for Env {
-    fn env(key: &str) -> usize {
+    fn env<K>(key: K) -> usize
+    where
+        K: AsRef<str>,
+    {
         <Self as EnvVar<String>>::env(key).parse().unwrap()
     }
 
-    fn env_or(key: &str, default: usize) -> usize {
+    fn env_or<K>(key: K, default: usize) -> usize
+    where
+        K: AsRef<str>,
+    {
         match Self::get_env(key) {
             Ok(var) => var.parse().unwrap(),
             Err(_) => default,
@@ -39,33 +59,52 @@ impl EnvVar<usize> for Env {
 }
 
 impl EnvVar<u16> for Env {
-    fn env(key: &str) -> u16 {
+    fn env<K>(key: K) -> u16
+    where
+        K: AsRef<str>,
+    {
         <Self as EnvVar<usize>>::env(key) as u16
     }
 
-    fn env_or(key: &str, default: u16) -> u16 {
+    fn env_or<K>(key: K, default: u16) -> u16
+    where
+        K: AsRef<str>,
+    {
         <Self as EnvVar<usize>>::env_or(key, default as usize) as u16
     }
 }
 
 impl EnvVar<bool> for Env {
-    fn env(key: &str) -> bool {
-        match_bool(<Self as EnvVar<String>>::env(key).as_str(), key)
+    fn env<K>(key: K) -> bool
+    where
+        K: AsRef<str>,
+    {
+        match_bool(<Self as EnvVar<String>>::env(key.as_ref()).as_str(), key)
     }
 
-    fn env_or(key: &str, default: bool) -> bool {
+    fn env_or<K>(key: K, default: bool) -> bool
+    where
+        K: AsRef<str>,
+    {
         match_bool(
-            <Self as EnvVar<String>>::env_or(key, default.to_string()).as_str(),
+            <Self as EnvVar<String>>::env_or(key.as_ref(), default.to_string()).as_str(),
             key,
         )
     }
 }
 
-fn match_bool(value: &str, key: &str) -> bool {
+fn match_bool<K>(value: &str, key: K) -> bool
+where
+    K: AsRef<str>,
+{
     match value {
         "true" | "1" | "yes" => true,
         "false" | "0" | "no" => false,
-        _ => panic!("`{}` is unrecognized bool value in {} env", value, key),
+        _ => panic!(
+            "`{}` is unrecognized bool value in {} env",
+            value,
+            key.as_ref()
+        ),
     }
 }
 
@@ -181,6 +220,27 @@ mod tests {
     fn env_unrecognized_bool_value() {
         with_var("TEST_BOOL", Some("FOO"), || {
             let _: bool = Env::env("TEST_BOOL");
+        })
+    }
+
+    #[test]
+    fn allow_to_use_any_type_of_string_as_key() {
+        with_var("FOO", Some("123"), || {
+            let a: &str = "FOO";
+            let b: String = String::from("FOO");
+            let c: &String = &b;
+
+            assert_eq!(123, <Env as EnvVar<usize>>::env(a));
+            assert_eq!(123, <Env as EnvVar<usize>>::env(c));
+            assert_eq!(123, <Env as EnvVar<usize>>::env(b));
+
+            let a: &str = "FOO";
+            let b: String = String::from("FOO");
+            let c: &String = &b;
+
+            assert_eq!(123, <Env as EnvVar<usize>>::env_or(a, 456));
+            assert_eq!(123, <Env as EnvVar<usize>>::env_or(c, 456));
+            assert_eq!(123, <Env as EnvVar<usize>>::env_or(b, 456));
         })
     }
 }
