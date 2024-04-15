@@ -5,7 +5,7 @@ use log::info;
 
 use server::amqp::{establish_connection_with_rabbit, Publisher};
 use server::dispatch_consumer::consume;
-use server::env::env_with_default;
+use server::env::{Env, EnvVar};
 use server::logs::init_log;
 use server::routes::routes;
 use server::storage::Storage;
@@ -16,7 +16,7 @@ async fn main() -> std::io::Result<()> {
     init_log();
 
     let ip = "127.0.0.1";
-    let port: u16 = env_with_default("SERVER_PORT", 8090);
+    let port: u16 = Env::env_or("SERVER_PORT", 8090);
 
     let storage = Data::new(Storage::new());
     let channel = establish_connection_with_rabbit().await;
