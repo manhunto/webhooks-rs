@@ -142,23 +142,12 @@ mod tests {
                 ("STRING_FALSE", Some("no")),
             ],
             || {
-                let val: bool = Env::env("BOOL_TRUE");
-                assert!(val);
-
-                let val: bool = Env::env("BOOL_FALSE");
-                assert!(!val);
-
-                let val: bool = Env::env("INT_TRUE");
-                assert!(val);
-
-                let val: bool = Env::env("INT_FALSE");
-                assert!(!val);
-
-                let val: bool = Env::env("STRING_TRUE");
-                assert!(val);
-
-                let val: bool = Env::env("STRING_FALSE");
-                assert!(!val);
+                assert!(<Env as EnvVar<bool>>::env("BOOL_TRUE"));
+                assert!(!<Env as EnvVar<bool>>::env("BOOL_FALSE"));
+                assert!(<Env as EnvVar<bool>>::env("INT_TRUE"));
+                assert!(!<Env as EnvVar<bool>>::env("INT_FALSE"));
+                assert!(<Env as EnvVar<bool>>::env("STRING_TRUE"));
+                assert!(!<Env as EnvVar<bool>>::env("STRING_FALSE"));
             },
         );
     }
