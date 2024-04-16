@@ -46,9 +46,8 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         info!("message consumed: {:?}", cmd);
 
         // todo allow to revive endpoint, check endpoint status and reset circuit breaker
-        let endpoint_id = cmd.endpoint_id();
-        let msg = storage.messages.get(cmd.msg_id());
 
+        let msg = storage.messages.get(cmd.msg_id());
         if msg.is_err() {
             error!(
                 "Message {} doesn't not exists and cannot be dispatched",
@@ -60,6 +59,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             continue;
         }
 
+        let endpoint_id = cmd.endpoint_id();
         let endpoint = storage.endpoints.get(&endpoint_id);
         if endpoint.is_err() {
             error!(
