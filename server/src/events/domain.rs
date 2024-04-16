@@ -1,5 +1,6 @@
-use crate::configuration::domain::{ApplicationId, Topic};
 use std::fmt::{Display, Formatter};
+
+use crate::configuration::domain::{ApplicationId, Topic};
 
 #[derive(Debug, Clone)]
 pub struct Payload {
@@ -18,7 +19,7 @@ impl Display for Payload {
     }
 }
 
-#[derive(Debug, Clone, derive::Ksuid)]
+#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
 #[prefix = "msg"]
 pub struct MessageId {
     id: String,

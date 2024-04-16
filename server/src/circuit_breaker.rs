@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::future::Future;
 
 use log::debug;
 
@@ -33,9 +34,10 @@ impl CircuitBreaker {
         self.states.get(&key).unwrap_or(&State::Open) == &State::Closed
     }
 
-    pub fn call<T, E, F>(&mut self, key: String, function: F) -> Result<T, Error<E>>
+    pub async fn call<T, E, F, Fut>(&mut self, key: String, function: F) -> Result<T, Error<E>>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = Result<T, E>>,
     {
         if self.is_call_permitted(key.clone()) {
             debug!("Service {} closed", key);
@@ -43,7 +45,7 @@ impl CircuitBreaker {
             return Err(Error::Rejected);
         }
 
-        match function() {
+        match function().await {
             Ok(ok) => {
                 self.storage.entry(key.clone()).or_insert(0);
 

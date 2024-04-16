@@ -1,17 +1,19 @@
 use std::time::Duration;
 
+use actix_web::web::Data;
 use futures_lite::StreamExt;
 use lapin::options::{BasicAckOptions, BasicConsumeOptions};
 use lapin::types::FieldTable;
 use lapin::Channel;
-use log::{debug, info};
+use log::{debug, error, info};
 
 use crate::amqp::{Publisher, Serializer, SENT_MESSAGE_QUEUE};
 use crate::circuit_breaker::{CircuitBreaker, Error};
 use crate::cmd::AsyncMessage;
 use crate::retry::RetryPolicyBuilder;
+use crate::storage::Storage;
 
-pub async fn consume(channel: Channel, consumer_tag: &str) {
+pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage>) {
     let retry_policy = RetryPolicyBuilder::new()
         .max_retries(5)
         .exponential(2, Duration::from_secs(2))
@@ -44,22 +46,52 @@ pub async fn consume(channel: Channel, consumer_tag: &str) {
         info!("message consumed: {:?}", cmd);
 
         // todo allow to revive endpoint, check endpoint status and reset circuit breaker
+        let endpoint_id = cmd.endpoint_id();
+        let msg = storage.messages.get(cmd.msg_id());
 
-        let key = cmd.endpoint_id.to_string();
+        if msg.is_err() {
+            error!(
+                "Message {} doesn't not exists and cannot be dispatched",
+                cmd.msg_id()
+            );
+
+            delivery.ack(BasicAckOptions::default()).await.expect("ack");
+
+            continue;
+        }
+
+        let endpoint = storage.endpoints.get(&endpoint_id);
+        if endpoint.is_err() {
+            error!(
+                "Endpoint {} doesn't not exists and message {} cannot be dispatched",
+                endpoint_id,
+                cmd.msg_id()
+            );
+
+            delivery.ack(BasicAckOptions::default()).await.expect("ack");
+
+            continue;
+        }
+
+        let msg = msg.unwrap();
+        let endpoint = endpoint.unwrap();
+
+        debug!(
+            "Message {} for endpoint {} is being prepared to send",
+            msg.id.to_string(),
+            endpoint.id.to_string()
+        );
+
         let func = || {
-            reqwest::blocking::Client::new()
-                .post(&cmd.url)
-                .json(&cmd.payload.as_str())
+            reqwest::Client::new()
+                .post(endpoint.url)
+                .json(msg.payload.to_string().as_str())
                 .send()
         };
 
-        let log_error_response = |res: reqwest::Error| {
-            let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
+        let key = endpoint_id.to_string();
 
-            debug!("Error response! Status: {}, Error: {}", status, res);
-        };
-
-        match circuit_breaker.call(key.clone(), func) {
+        match circuit_breaker.call(key.clone(), func).await {
             Ok(res) => {
                 debug!("Success! {}", res.status())
             }
@@ -92,7 +124,8 @@ pub async fn consume(channel: Channel, consumer_tag: &str) {
                 Error::Rejected => {
                     debug!(
                         "Endpoint {} is closed. Message {} rejected.",
-                        key, cmd.msg_id
+                        key,
+                        cmd.msg_id()
                     );
 
                     // todo do something with message? add to some "not delivered" bucket?
@@ -102,4 +135,10 @@ pub async fn consume(channel: Channel, consumer_tag: &str) {
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
+}
+
+fn log_error_response(res: reqwest::Error) {
+    let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
+
+    debug!("Error response! Status: {}, Error: {}", status, res);
 }

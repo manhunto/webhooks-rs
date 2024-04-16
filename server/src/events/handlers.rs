@@ -50,12 +50,7 @@ pub async fn create_message_handler(
     for endpoint in active_endpoints {
         debug!("{} sending to {}", msg.id, endpoint.url);
 
-        let cmd = SentMessage::new(
-            msg.payload.clone(),
-            endpoint.url,
-            msg.id.clone(),
-            endpoint.id,
-        );
+        let cmd = SentMessage::new(msg.id.clone(), endpoint.id);
         let message = AsyncMessage::SentMessage(cmd);
 
         dispatcher.publish(message).await;

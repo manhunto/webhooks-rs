@@ -19,6 +19,7 @@ async fn main() -> std::io::Result<()> {
     let port: u16 = Env::env_or("SERVER_PORT", 8090);
 
     let storage = Data::new(Storage::new());
+    let storage_for_consumer = storage.clone();
     let channel = establish_connection_with_rabbit().await;
     let publisher = Data::new(Publisher::new(channel.clone()));
     let app = move || {
@@ -33,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         ip, port
     );
 
-    rt::spawn(async move { consume(channel, "dispatcher-in-server").await });
+    rt::spawn(async move { consume(channel, "dispatcher-in-server", storage_for_consumer).await });
 
     HttpServer::new(app).bind((ip, port))?.run().await
 }
