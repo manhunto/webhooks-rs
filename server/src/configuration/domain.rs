@@ -38,13 +38,14 @@ pub struct EndpointId {
 pub enum EndpointStatus {
     Initial,
     DisabledManually,
+    DisabledFailing,
 }
 
 impl EndpointStatus {
     fn is_active(&self) -> bool {
         match self {
-            EndpointStatus::Initial => true,
-            EndpointStatus::DisabledManually => false,
+            Self::Initial => true,
+            Self::DisabledManually | Self::DisabledFailing => false,
         }
     }
 }
@@ -74,6 +75,10 @@ impl Endpoint {
     }
 
     pub fn disable_manually(&mut self) {
+        self.status = EndpointStatus::DisabledManually;
+    }
+
+    pub fn disable_failing(&mut self) {
         self.status = EndpointStatus::DisabledManually;
     }
 }
@@ -116,15 +121,32 @@ mod tests {
     }
 
     #[test]
-    fn endpoint_is_active() {
-        let mut endpoint = Endpoint::new(
-            "https://localhost".to_string(),
-            ApplicationId::new(),
-            vec![Topic::new("test".to_string()).unwrap()],
-        );
+    fn endpoint_disable_manually_is_active() {
+        let mut endpoint = EndpointObjectMother::init_new();
         assert!(endpoint.is_active());
 
         endpoint.disable_manually();
         assert!(!endpoint.is_active());
+    }
+
+    #[test]
+    fn endpoint_disable_is_active() {
+        let mut endpoint = EndpointObjectMother::init_new();
+        assert!(endpoint.is_active());
+
+        endpoint.disable_manually();
+        assert!(!endpoint.is_active());
+    }
+
+    struct EndpointObjectMother;
+
+    impl EndpointObjectMother {
+        fn init_new() -> Endpoint {
+            Endpoint::new(
+                "https://localhost".to_string(),
+                ApplicationId::new(),
+                vec![Topic::new("test".to_string()).unwrap()],
+            )
+        }
     }
 }

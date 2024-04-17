@@ -1,3 +1,5 @@
+use std::cell::{RefCell, RefMut};
+use std::rc::Rc;
 use std::time::Duration;
 
 use actix_web::web::Data;
@@ -10,6 +12,7 @@ use log::{debug, error, info};
 use crate::amqp::{Publisher, Serializer, SENT_MESSAGE_QUEUE};
 use crate::circuit_breaker::{CircuitBreaker, Error};
 use crate::cmd::AsyncMessage;
+use crate::configuration::domain::Endpoint;
 use crate::retry::RetryPolicyBuilder;
 use crate::storage::Storage;
 
@@ -74,17 +77,18 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         }
 
         let msg = msg.unwrap();
-        let endpoint = endpoint.unwrap();
+        let endpoint = Rc::new(RefCell::new(endpoint.unwrap()));
+        let endpoint_borrowed = endpoint.borrow().to_owned();
 
         debug!(
             "Message {} for endpoint {} is being prepared to send",
             msg.id.to_string(),
-            endpoint.id.to_string()
+            endpoint_borrowed.id.to_string()
         );
 
         let func = || {
             reqwest::Client::new()
-                .post(endpoint.url)
+                .post(endpoint_borrowed.url)
                 .json(msg.payload.to_string().as_str())
                 .send()
         };
@@ -99,7 +103,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
                 Error::Closed(res) => {
                     log_error_response(res);
 
-                    // todo mark endpoint as disabled
+                    disable_endpoint(endpoint.borrow_mut(), &storage);
                 }
                 Error::Open(res) => {
                     log_error_response(res);
@@ -141,4 +145,11 @@ fn log_error_response(res: reqwest::Error) {
     let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
 
     debug!("Error response! Status: {}, Error: {}", status, res);
+}
+
+fn disable_endpoint(mut endpoint: RefMut<Endpoint>, storage: &Data<Storage>) {
+    endpoint.disable_failing();
+    storage.endpoints.save(endpoint.to_owned());
+
+    debug!("Endpoint {} has been disabled", endpoint.id);
 }
