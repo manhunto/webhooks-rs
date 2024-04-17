@@ -89,16 +89,18 @@ pub struct Topic {
 }
 
 impl Topic {
-    pub fn new(name: String) -> Result<Self, Error> {
+    pub fn new<T>(name: T) -> Result<Self, Error>
+        where T: AsRef<str>
+    {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^[a-zA-Z_\.\-]+$").unwrap();
         }
 
-        if !RE.is_match(name.as_str()) {
+        if !RE.is_match(name.as_ref()) {
             return Err(InvalidArgument("Invalid topic name".to_string()));
         }
 
-        Ok(Self { name })
+        Ok(Self { name: name.as_ref().to_string() })
     }
 }
 
@@ -109,16 +111,8 @@ impl Display for Topic {
 }
 
 #[cfg(test)]
-mod tests {
+mod endpoint_tests {
     use crate::configuration::domain::{ApplicationId, Endpoint, Topic};
-
-    #[test]
-    fn topic_name_construct() {
-        assert!(Topic::new("customer_updated".to_string()).is_ok());
-        assert!(Topic::new("customer-updated".to_string()).is_ok());
-        assert!(Topic::new("customer.updated".to_string()).is_ok());
-        assert!(Topic::new("customer.updated2".to_string()).is_err());
-    }
 
     #[test]
     fn endpoint_disable_manually_is_active() {
@@ -145,8 +139,35 @@ mod tests {
             Endpoint::new(
                 "https://localhost".to_string(),
                 ApplicationId::new(),
-                vec![Topic::new("test".to_string()).unwrap()],
+                vec![Topic::new("test").unwrap()],
             )
         }
+    }
+}
+
+#[cfg(test)]
+mod topic_tests {
+    use crate::configuration::domain::Topic;
+
+    #[test]
+    fn topic_name_construct() {
+        assert!(Topic::new("customer_updated").is_ok());
+        assert!(Topic::new("customer-updated").is_ok());
+        assert!(Topic::new("customer.updated").is_ok());
+        assert!(Topic::new("customer.updated2").is_err());
+        assert!(Topic::new("customer updated").is_err());
+        assert!(Topic::new("").is_err());
+        assert!(Topic::new(" ").is_err());
+    }
+
+    #[test]
+    fn topic_can_be_build_from_any_type_of_str() {
+        let a: &str = "order.purchased";
+        let b: String = String::from("order.purchased");
+        let c: &String = &b;
+
+        assert!(Topic::new(a).is_ok());
+        assert!(Topic::new(c).is_ok());
+        assert!(Topic::new(b).is_ok());
     }
 }
