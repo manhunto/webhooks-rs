@@ -90,7 +90,8 @@ pub struct Topic {
 
 impl Topic {
     pub fn new<T>(name: T) -> Result<Self, Error>
-        where T: AsRef<str>
+    where
+        T: AsRef<str>,
     {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^[a-zA-Z_\.\-]+$").unwrap();
@@ -100,7 +101,9 @@ impl Topic {
             return Err(InvalidArgument("Invalid topic name".to_string()));
         }
 
-        Ok(Self { name: name.as_ref().to_string() })
+        Ok(Self {
+            name: name.as_ref().to_string(),
+        })
     }
 }
 
