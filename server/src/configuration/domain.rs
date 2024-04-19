@@ -151,6 +151,7 @@ mod endpoint_tests {
 #[cfg(test)]
 mod topic_tests {
     use crate::configuration::domain::Topic;
+    use crate::tests::assert_strings;
 
     #[test]
     fn topic_name_construct() {
@@ -165,12 +166,6 @@ mod topic_tests {
 
     #[test]
     fn topic_can_be_build_from_any_type_of_str() {
-        let a: &str = "order.purchased";
-        let b: String = String::from("order.purchased");
-        let c: &String = &b;
-
-        assert!(Topic::new(a).is_ok());
-        assert!(Topic::new(c).is_ok());
-        assert!(Topic::new(b).is_ok());
+        assert_strings!("order.purchased", |str| Topic::new(str).is_ok());
     }
 }

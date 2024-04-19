@@ -113,6 +113,7 @@ mod tests {
     use temp_env::{with_var, with_var_unset, with_vars, with_vars_unset};
 
     use crate::env::{Env, EnvVar};
+    use crate::tests::assert_strings;
 
     #[test]
     fn env_with_default_env_is_set() {
@@ -226,21 +227,9 @@ mod tests {
     #[test]
     fn allow_to_use_any_type_of_string_as_key() {
         with_var("FOO", Some("123"), || {
-            let a: &str = "FOO";
-            let b: String = String::from("FOO");
-            let c: &String = &b;
-
-            assert_eq!(123, <Env as EnvVar<usize>>::env(a));
-            assert_eq!(123, <Env as EnvVar<usize>>::env(c));
-            assert_eq!(123, <Env as EnvVar<usize>>::env(b));
-
-            let a: &str = "FOO";
-            let b: String = String::from("FOO");
-            let c: &String = &b;
-
-            assert_eq!(123, <Env as EnvVar<usize>>::env_or(a, 456));
-            assert_eq!(123, <Env as EnvVar<usize>>::env_or(c, 456));
-            assert_eq!(123, <Env as EnvVar<usize>>::env_or(b, 456));
+            assert_strings!("FOO", |str| <Env as EnvVar<usize>>::env(str).eq(&123));
+            assert_strings!("FOO", |str| <Env as EnvVar<usize>>::env_or(str, 456)
+                .eq(&123));
         })
     }
 }
