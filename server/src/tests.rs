@@ -20,8 +20,8 @@ macro_rules! assert_strings {
         let b_result = $func(b);
 
         assert!(a_result, "{}", fmt("$str"));
-        assert!(c_result, "{}", fmt("String"));
-        assert!(b_result, "{}", fmt("&String"));
+        assert!(c_result, "{}", fmt("&String"));
+        assert!(b_result, "{}", fmt("String"));
     };
 }
 
