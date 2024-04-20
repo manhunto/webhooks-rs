@@ -45,7 +45,7 @@ impl CircuitBreaker {
 
         match function().await {
             Ok(ok) => {
-                *self.storage.entry(key.clone()).or_insert(0) = 0;
+                self.revive(key);
 
                 Ok(ok)
             }
@@ -67,6 +67,11 @@ impl CircuitBreaker {
                 Err(Error::Open(err))
             }
         }
+    }
+
+    pub fn revive(&mut self, key: &str) {
+        *self.storage.entry(key.to_owned()).or_insert(0) = 0;
+        self.update(key.to_owned(), State::Open);
     }
 
     fn is_call_permitted(&self, key: String) -> bool {
@@ -155,6 +160,26 @@ mod tests {
         assert_eq!(Err(Open(255)), sut.call(&key2, err).await);
         assert_eq!(Err(Open(255)), sut.call(&key2, err).await);
         assert_eq!(Err(Closed(255)), sut.call(&key2, err).await);
+    }
+
+    #[tokio::test]
+    async fn revive_closed() {
+        let mut sut = CircuitBreaker::new();
+        let key = "key".to_string();
+
+        assert_eq!(Err(Open(255)), sut.call(&key, err).await);
+        assert_eq!(Err(Open(255)), sut.call(&key, err).await);
+        assert_eq!(Err(Closed(255)), sut.call(&key, err).await);
+
+        sut.revive(&key);
+
+        assert_eq!(Err(Open(255)), sut.call(&key, err).await);
+        assert_eq!(Err(Open(255)), sut.call(&key, err).await);
+        assert_eq!(Err(Closed(255)), sut.call(&key, err).await);
+
+        sut.revive(&key);
+
+        assert_eq!(Err(Open(255)), sut.call(&key, err).await);
     }
 
     async fn ok() -> Result<u8, u8> {
