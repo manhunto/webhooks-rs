@@ -64,6 +64,26 @@ pub async fn disable_endpoint_handler(
     storage: Data<Storage>,
     path: Path<(String, String)>,
 ) -> Result<impl Responder, ResponseError> {
+    handle_status(storage, path, StatusAction::Disable).await
+}
+
+pub async fn enable_endpoint_handler(
+    storage: Data<Storage>,
+    path: Path<(String, String)>,
+) -> Result<impl Responder, ResponseError> {
+    handle_status(storage, path, StatusAction::Enable).await
+}
+
+enum StatusAction {
+    Enable,
+    Disable,
+}
+
+async fn handle_status(
+    storage: Data<Storage>,
+    path: Path<(String, String)>,
+    action: StatusAction,
+) -> Result<impl Responder, ResponseError> {
     let (app_id, endpoint_id) = path.into_inner();
 
     let app_id = ApplicationId::try_from(app_id).unwrap();
@@ -77,11 +97,17 @@ pub async fn disable_endpoint_handler(
         return Err(ResponseError::NotFound("Endpoint not found".to_string()));
     }
 
-    endpoint.disable_manually();
+    match action {
+        StatusAction::Enable => endpoint.enable_manually(),
+        StatusAction::Disable => endpoint.disable_manually(),
+    }
 
     storage.endpoints.save(endpoint);
 
-    debug!("Endpoint {} disabled", endpoint_id);
+    match action {
+        StatusAction::Enable => debug!("Endpoint {} enabled", endpoint_id),
+        StatusAction::Disable => debug!("Endpoint {} disabled", endpoint_id),
+    }
 
     Ok(HttpResponse::NoContent())
 }

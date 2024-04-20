@@ -39,12 +39,13 @@ pub enum EndpointStatus {
     Initial,
     DisabledManually,
     DisabledFailing,
+    EnabledManually,
 }
 
 impl EndpointStatus {
     fn is_active(&self) -> bool {
         match self {
-            Self::Initial => true,
+            Self::Initial | Self::EnabledManually => true,
             Self::DisabledManually | Self::DisabledFailing => false,
         }
     }
@@ -80,6 +81,10 @@ impl Endpoint {
 
     pub fn disable_failing(&mut self) {
         self.status = EndpointStatus::DisabledManually;
+    }
+
+    pub fn enable_manually(&mut self) {
+        self.status = EndpointStatus::EnabledManually;
     }
 }
 
@@ -118,7 +123,7 @@ mod endpoint_tests {
     use crate::configuration::domain::{ApplicationId, Endpoint, Topic};
 
     #[test]
-    fn endpoint_disable_manually_is_active() {
+    fn endpoint_disable_manually_is_not_active() {
         let mut endpoint = EndpointObjectMother::init_new();
         assert!(endpoint.is_active());
 
@@ -127,12 +132,21 @@ mod endpoint_tests {
     }
 
     #[test]
-    fn endpoint_disable_is_active() {
+    fn endpoint_disable_failing_is_not_active() {
         let mut endpoint = EndpointObjectMother::init_new();
         assert!(endpoint.is_active());
 
-        endpoint.disable_manually();
+        endpoint.disable_failing();
         assert!(!endpoint.is_active());
+    }
+
+    #[test]
+    fn endpoint_enable_manually_is_active() {
+        let mut endpoint = EndpointObjectMother::init_disabled();
+        assert!(!endpoint.is_active());
+
+        endpoint.enable_manually();
+        assert!(endpoint.is_active());
     }
 
     struct EndpointObjectMother;
@@ -144,6 +158,13 @@ mod endpoint_tests {
                 ApplicationId::new(),
                 vec![Topic::new("test").unwrap()],
             )
+        }
+
+        fn init_disabled() -> Endpoint {
+            let mut endpoint = Self::init_new();
+            endpoint.disable_manually();
+
+            endpoint
         }
     }
 }

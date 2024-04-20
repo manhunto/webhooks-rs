@@ -48,3 +48,7 @@ Content-Type: application/json
 ### Disable endpoint
 POST {{url}}/v1/application/{{app_id}}/endpoint/{{endpoint_id}}/disable
 Content-Type: application/json
+
+### Enable endpoint
+POST {{url}}/v1/application/{{app_id}}/endpoint/{{endpoint_id}}/enable
+Content-Type: application/json
