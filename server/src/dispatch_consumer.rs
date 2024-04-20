@@ -95,6 +95,12 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         let key = endpoint_id.to_string();
 
+        if endpoint.borrow().to_owned().is_active() {
+            circuit_breaker.revive(&key);
+
+            debug!("Endpoint {} has been opened", key);
+        }
+
         match circuit_breaker.call(&key, func).await {
             Ok(res) => {
                 debug!("Success! {}", res.status())
