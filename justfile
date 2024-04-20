@@ -1,5 +1,6 @@
 alias b := build
 alias f := format
+alias fmt := format
 alias c := clippy
 alias t := test
 alias rs := run-server
