@@ -95,7 +95,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         let key = endpoint_id.to_string();
 
-        match circuit_breaker.call(key.clone(), func).await {
+        match circuit_breaker.call(&key, func).await {
             Ok(res) => {
                 debug!("Success! {}", res.status())
             }
