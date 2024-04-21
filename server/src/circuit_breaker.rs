@@ -18,14 +18,16 @@ pub enum Error<T> {
 
 // todo extract policy
 pub struct CircuitBreaker {
+    max_fails: u32,
     storage: HashMap<String, u32>,
     // todo extract trait, allow to persist in redis,
     states: HashMap<String, State>,
 }
 
 impl CircuitBreaker {
-    pub fn new() -> Self {
+    pub fn new(max_fails: u32) -> Self {
         Self {
+            max_fails,
             storage: HashMap::new(),
             states: HashMap::new(),
         }
@@ -55,7 +57,7 @@ impl CircuitBreaker {
                 if let Some(fail_count) = self.storage.get(key) {
                     debug!("Service {} current fail count: {}", key, fail_count);
 
-                    if fail_count.ge(&3) {
+                    if fail_count.ge(&self.max_fails) {
                         debug!("Service {} reached a limit and is closed", key);
 
                         self.update(key.clone(), State::Closed);
@@ -95,7 +97,7 @@ impl CircuitBreaker {
 
 impl Default for CircuitBreaker {
     fn default() -> Self {
-        Self::new()
+        Self::new(3)
     }
 }
 
@@ -106,7 +108,7 @@ mod tests {
 
     #[tokio::test]
     async fn successful_calls_doesnt_close_the_endpoint() {
-        let mut sut = CircuitBreaker::new();
+        let mut sut = CircuitBreaker::new(3);
         let key = "key".to_string();
 
         assert_eq!(Ok(0), sut.call(&key, ok).await);
@@ -122,7 +124,7 @@ mod tests {
 
     #[tokio::test]
     async fn erroneous_calls_close_the_endpoint() {
-        let mut sut = CircuitBreaker::new();
+        let mut sut = CircuitBreaker::new(3);
         let key = "key".to_string();
 
         assert_eq!(Err(Open(255)), sut.call(&key, err).await);
@@ -132,7 +134,7 @@ mod tests {
 
     #[tokio::test]
     async fn calls_are_rejected_to_closed_endpoint() {
-        let mut sut = CircuitBreaker::new();
+        let mut sut = CircuitBreaker::new(3);
         let key = "key".to_string();
 
         assert_eq!(Err(Open(255)), sut.call(&key, err).await);
@@ -145,7 +147,7 @@ mod tests {
 
     #[tokio::test]
     async fn successful_call_resets_counter() {
-        let mut sut = CircuitBreaker::new();
+        let mut sut = CircuitBreaker::new(3);
         let key = "key".to_string();
 
         assert_eq!(Err(Open(255)), sut.call(&key, err).await);
@@ -159,7 +161,7 @@ mod tests {
 
     #[tokio::test]
     async fn every_key_has_own_counter() {
-        let mut sut = CircuitBreaker::new();
+        let mut sut = CircuitBreaker::new(3);
         let key = "key".to_string();
         let key2 = "key2".to_string();
 
@@ -174,7 +176,7 @@ mod tests {
 
     #[tokio::test]
     async fn revive_closed() {
-        let mut sut = CircuitBreaker::new();
+        let mut sut = CircuitBreaker::new(3);
         let key = "key".to_string();
 
         assert_eq!(Err(Open(255)), sut.call(&key, err).await);
@@ -194,7 +196,7 @@ mod tests {
 
     #[tokio::test]
     async fn revive_opened_doesnt_reset_counter() {
-        let mut sut = CircuitBreaker::new();
+        let mut sut = CircuitBreaker::new(3);
         let key = "key".to_string();
 
         assert_eq!(Err(Open(255)), sut.call(&key, err).await);

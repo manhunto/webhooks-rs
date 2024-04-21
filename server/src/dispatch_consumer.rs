@@ -24,7 +24,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         .build()
         .unwrap();
 
-    let mut circuit_breaker = CircuitBreaker::new();
+    let mut circuit_breaker = CircuitBreaker::default();
 
     let mut consumer = channel
         .basic_consume(
@@ -47,8 +47,6 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         let AsyncMessage::SentMessage(cmd) = async_msg;
 
         info!("message consumed: {:?}", cmd);
-
-        // todo allow to revive endpoint, check endpoint status and reset circuit breaker
 
         let msg = storage.messages.get(cmd.msg_id());
         if msg.is_err() {
