@@ -1,17 +1,19 @@
-mod application;
-mod client;
+use url::Url;
+
+use client::Client;
 
 use crate::application::Application;
-use client::Client;
-use url::Url;
+
+mod application;
+mod client;
 
 pub struct WebhooksSDK {
     client: Client,
 }
 
 impl WebhooksSDK {
-    pub fn new(api_url: String) -> Self {
-        let url = Url::parse(api_url.as_str()).unwrap();
+    pub fn new(api_url: &str) -> Self {
+        let url = Url::parse(api_url).unwrap();
 
         Self {
             client: Client::new(url),

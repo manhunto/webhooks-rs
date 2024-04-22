@@ -1,7 +1,9 @@
-use crate::client::{Client, EndpointUrl};
+use std::str::FromStr;
+
 use serde::Deserialize;
 use serde_json::json;
-use std::str::FromStr;
+
+use crate::client::{Client, EndpointUrl};
 
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct App {
@@ -19,7 +21,7 @@ impl Application {
         Self { client }
     }
 
-    pub async fn create(&self, name: String) -> App {
+    pub async fn create(&self, name: &str) -> App {
         let body = json!({
             "name": name,
         });
@@ -32,10 +34,11 @@ impl Application {
 
 #[cfg(test)]
 mod tests {
-    use crate::application::App;
-    use crate::WebhooksSDK;
     use mockito::Matcher::Json;
     use serde_json::json;
+
+    use crate::application::App;
+    use crate::WebhooksSDK;
 
     #[tokio::test]
     async fn create_application() {
@@ -51,9 +54,9 @@ mod tests {
             .create_async()
             .await;
 
-        let app = WebhooksSDK::new(url)
+        let app = WebhooksSDK::new(url.as_str())
             .application()
-            .create("dummy application".to_string())
+            .create("dummy application")
             .await;
 
         mock.assert_async().await;
@@ -61,7 +64,7 @@ mod tests {
         assert_eq!(
             App {
                 id: "app_2dSZgxc6qw0vR7hwZVXDJFleRXj".to_string(),
-                name: "dummy application".to_string()
+                name: "dummy application".to_string(),
             },
             app
         );
