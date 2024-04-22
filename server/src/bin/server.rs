@@ -1,11 +1,12 @@
 use actix_web::web::Data;
 use actix_web::{rt, App, HttpServer};
 use dotenv::dotenv;
+use envconfig::Envconfig;
 use log::info;
 
 use server::amqp::{establish_connection_with_rabbit, Publisher};
+use server::config::ServerConfig;
 use server::dispatch_consumer::consume;
-use server::env::{Env, EnvVar};
 use server::logs::init_log;
 use server::routes::routes;
 use server::storage::Storage;
@@ -15,8 +16,10 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     init_log();
 
+    let config = ServerConfig::init_from_env().unwrap();
+
     let ip = "127.0.0.1";
-    let port: u16 = Env::env_or("SERVER_PORT", 8090);
+    let port: u16 = config.port;
 
     let storage = Data::new(Storage::new());
     let storage_for_consumer = storage.clone();

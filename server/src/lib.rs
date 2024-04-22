@@ -1,9 +1,9 @@
 pub mod amqp;
 pub mod circuit_breaker;
 pub mod cmd;
+pub mod config;
 mod configuration;
 pub mod dispatch_consumer;
-pub mod env;
 mod error;
 mod events;
 pub mod logs;
