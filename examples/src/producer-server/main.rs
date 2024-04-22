@@ -1,10 +1,21 @@
+use std::env::var;
+
+use dotenv::dotenv;
+
 use sdk::WebhooksSDK;
 
 #[tokio::main]
 async fn main() {
-    let sdk = WebhooksSDK::new("http://localhost:8090".to_string());
+    dotenv().ok();
 
-    let app = sdk.application().create("dummy".to_string()).await;
+    let port: u16 = var("SERVER_PORT").unwrap().parse().unwrap();
+    let url = format!("http://localhost:{}", port);
 
-    println!("{:?}", app);
+    println!("{}", url);
+
+    let sdk = WebhooksSDK::new(url.as_str());
+
+    let app = sdk.application().create("dummy").await;
+
+    println!("App created - {:?}", app);
 }
