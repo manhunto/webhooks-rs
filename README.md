@@ -28,9 +28,11 @@ an application that is high-performing, configurable and scalable.
 
 - [x] Retry policy for failed messages
 - [x] Endpoint can be disabled manually
-- [ ] Circuit breaker policy for still failing endpoint
+- [x] Circuit breaker
 - [ ] Rate-limit
+- [ ] Auth
 - [ ] Signed webhooks - server can verify that message was sent from valid server
+- [ ] Persistence
 - [ ] SDK
 - [ ] CLI
 
