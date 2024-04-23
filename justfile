@@ -35,6 +35,10 @@ run-producer-server *OPTIONS:
 run-destination-server *OPTIONS:
     cargo run --example destination-server {{ OPTIONS }}
 
+# Run cli with args
+run-cli *ARGS:
+    cargo run --package=cli -- {{ ARGS }}
+
 test:
     cargo test --workspace
 
