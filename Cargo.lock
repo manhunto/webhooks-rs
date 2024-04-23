@@ -646,6 +646,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+
+[[package]]
 name = "colored"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
