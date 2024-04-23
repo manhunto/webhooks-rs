@@ -7,8 +7,8 @@ use crate::client::{Client, EndpointUrl};
 
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct App {
-    id: String,
-    name: String,
+    pub id: String,
+    pub name: String,
 }
 
 pub struct Application {
