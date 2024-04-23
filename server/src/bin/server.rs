@@ -1,5 +1,5 @@
+use actix_web::{App, HttpServer, rt};
 use actix_web::web::Data;
-use actix_web::{rt, App, HttpServer};
 use dotenv::dotenv;
 use envconfig::Envconfig;
 use log::info;
@@ -18,7 +18,7 @@ async fn main() -> std::io::Result<()> {
 
     let config = ServerConfig::init_from_env().unwrap();
 
-    let ip = "127.0.0.1";
+    let ip = config.host;
     let port: u16 = config.port;
 
     let storage = Data::new(Storage::new());
