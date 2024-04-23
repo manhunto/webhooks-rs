@@ -1,5 +1,5 @@
-use actix_web::{App, HttpServer, rt};
 use actix_web::web::Data;
+use actix_web::{rt, App, HttpServer};
 use dotenv::dotenv;
 use envconfig::Envconfig;
 use log::info;
