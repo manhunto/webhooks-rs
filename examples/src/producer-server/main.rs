@@ -1,4 +1,4 @@
-use std::env::var;
+use std::env;
 
 use dotenv::dotenv;
 
@@ -8,13 +8,11 @@ use sdk::WebhooksSDK;
 async fn main() {
     dotenv().ok();
 
-    let port: u16 = var("SERVER_PORT").unwrap().parse().unwrap();
-    let url = format!("http://localhost:{}", port);
+    let url: String = env::var("SERVER_URL").unwrap();
 
     println!("{}", url);
 
     let sdk = WebhooksSDK::new(url.as_str());
-
     let app = sdk.application().create("dummy").await;
 
     println!("App created - {:?}", app);
