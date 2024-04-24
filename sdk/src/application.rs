@@ -4,6 +4,7 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::client::{Client, EndpointUrl};
+use crate::error::Error;
 
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct App {
@@ -21,7 +22,7 @@ impl Application {
         Self { client }
     }
 
-    pub async fn create(&self, name: &str) -> App {
+    pub async fn create(&self, name: &str) -> Result<App, Error> {
         let body = json!({
             "name": name,
         });
@@ -57,7 +58,8 @@ mod tests {
         let app = WebhooksSDK::new(url.as_str())
             .application()
             .create("dummy application")
-            .await;
+            .await
+            .unwrap();
 
         mock.assert_async().await;
 

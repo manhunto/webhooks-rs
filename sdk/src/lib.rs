@@ -6,6 +6,7 @@ use crate::application::Application;
 
 mod application;
 mod client;
+pub mod error;
 
 pub struct WebhooksSDK {
     client: Client,
