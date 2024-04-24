@@ -4,12 +4,13 @@ use std::time::Duration;
 
 use actix_web::web::Data;
 use futures_lite::StreamExt;
+use lapin::Channel;
 use lapin::options::{BasicAckOptions, BasicConsumeOptions};
 use lapin::types::FieldTable;
-use lapin::Channel;
 use log::{debug, error, info};
+use serde_json::Value;
 
-use crate::amqp::{Publisher, Serializer, SENT_MESSAGE_QUEUE};
+use crate::amqp::{Publisher, SENT_MESSAGE_QUEUE, Serializer};
 use crate::circuit_breaker::{CircuitBreaker, Error};
 use crate::cmd::AsyncMessage;
 use crate::configuration::domain::Endpoint;
@@ -85,9 +86,11 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         );
 
         let func = || {
+            let body: Value = serde_json::from_str(msg.payload.to_string().as_str()).unwrap();
+
             reqwest::Client::new()
                 .post(endpoint_borrowed.url)
-                .json(msg.payload.to_string().as_str())
+                .json(&body)
                 .send()
         };
 
@@ -101,7 +104,9 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         match circuit_breaker.call(&key, func).await {
             Ok(res) => {
-                debug!("Success! {}", res.status())
+                debug!("Success! {}", res.status()); // todo handle errors other than 200-299 as Err
+
+                debug!("{:?}", res);
             }
             Err(err) => match err {
                 Error::Closed(res) => {
