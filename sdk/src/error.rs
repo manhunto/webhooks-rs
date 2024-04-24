@@ -1,10 +1,12 @@
-use std::fmt::{Display, Formatter};
+use thiserror::Error;
 
-use crate::error::Error::{Reqwest, Unknown};
+use crate::error::Error::Reqwest;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum Error {
+    #[error("Error occurred during request: {0}")]
     Reqwest(reqwest::Error),
+    #[error("Unknown error")]
     Unknown,
 }
 
@@ -13,16 +15,3 @@ impl From<reqwest::Error> for Error {
         Reqwest(value)
     }
 }
-
-impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let val = match self {
-            Reqwest(err) => format!("{}", err),
-            Unknown => "Unknown error".to_string(),
-        };
-
-        write!(f, "{}", val)
-    }
-}
-
-impl std::error::Error for Error {}
