@@ -6,11 +6,11 @@ publish = false
 
 [[example]]
 name = "destination-server"
-path = "src/destination-server/main.rs"
+path = "src/destination-server.rs"
 
 [[example]]
 name = "producer-server"
-path = "src/producer-server/main.rs"
+path = "src/producer-server.rs"
 
 [dependencies]
 actix-web = "4.5.1"
