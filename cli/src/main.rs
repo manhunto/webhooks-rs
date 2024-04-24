@@ -43,7 +43,7 @@ async fn main() {
     match app.command {
         Command::App { subcommand } => match subcommand {
             AppSubcommand::Create { name } => {
-                let app = sdk.application().create(name.as_str()).await;
+                let app = sdk.application().create(name.as_str()).await.unwrap();
 
                 println!("App {} with name '{}' has been created", app.id, app.name);
             }
