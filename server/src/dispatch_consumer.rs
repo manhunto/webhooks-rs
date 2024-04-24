@@ -4,13 +4,13 @@ use std::time::Duration;
 
 use actix_web::web::Data;
 use futures_lite::StreamExt;
-use lapin::Channel;
 use lapin::options::{BasicAckOptions, BasicConsumeOptions};
 use lapin::types::FieldTable;
+use lapin::Channel;
 use log::{debug, error, info};
 use serde_json::Value;
 
-use crate::amqp::{Publisher, SENT_MESSAGE_QUEUE, Serializer};
+use crate::amqp::{Publisher, Serializer, SENT_MESSAGE_QUEUE};
 use crate::circuit_breaker::{CircuitBreaker, Error};
 use crate::cmd::AsyncMessage;
 use crate::configuration::domain::Endpoint;
