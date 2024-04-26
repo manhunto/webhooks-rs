@@ -113,6 +113,12 @@ impl Topic {
     }
 }
 
+impl Display for Topic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicsList {
     topics: Vec<Topic>,
@@ -154,12 +160,6 @@ impl FromIterator<String> for TopicsList {
 impl From<TopicsList> for Vec<String> {
     fn from(value: TopicsList) -> Self {
         value.topics.into_iter().map(|t| t.name).collect()
-    }
-}
-
-impl Display for Topic {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name)
     }
 }
 
