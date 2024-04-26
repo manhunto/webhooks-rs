@@ -13,8 +13,8 @@ alias dd := docker-down
 default:
     @just --list
 
-build:
-    cargo build --all-targets
+build *OPTIONS:
+    cargo build --all-targets {{ OPTIONS }}
 
 format:
     cargo fmt --all
