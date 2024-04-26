@@ -1,6 +1,5 @@
 use log::debug;
 use reqwest::StatusCode;
-use serde_json::Value;
 use url::Url;
 
 use crate::events::domain::Payload;
@@ -17,11 +16,9 @@ impl Sender {
     }
 
     pub async fn send(&self) -> Result<(), ()> {
-        let body: Value = serde_json::from_str(self.payload.to_string().as_str()).unwrap();
-
         let response = reqwest::Client::new()
             .post(self.url.to_owned())
-            .json(&body)
+            .json(&self.payload)
             .send()
             .await;
 

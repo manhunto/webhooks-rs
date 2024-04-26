@@ -1,5 +1,8 @@
 use std::fmt::{Display, Formatter};
 
+use serde::{Serialize, Serializer};
+use serde_json::Value;
+
 use crate::configuration::domain::{ApplicationId, Topic};
 
 #[derive(Debug, Clone)]
@@ -7,9 +10,20 @@ pub struct Payload {
     body: String,
 }
 
-impl From<String> for Payload {
-    fn from(value: String) -> Self {
-        Self { body: value }
+impl From<Value> for Payload {
+    fn from(value: Value) -> Self {
+        Self {
+            body: value.to_string(),
+        }
+    }
+}
+
+impl Serialize for Payload {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.body.as_str())
     }
 }
 

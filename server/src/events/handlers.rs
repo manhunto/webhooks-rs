@@ -21,7 +21,7 @@ pub async fn create_message_handler(
     let topic = Topic::new(request.topic.clone())?;
     let msg = Message::new(
         app.id,
-        Payload::from(request.payload.to_string()),
+        Payload::from(request.payload.clone()),
         topic.clone(),
     );
 
