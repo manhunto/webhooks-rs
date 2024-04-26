@@ -2473,6 +2473,7 @@ dependencies = [
  "lazy_static",
  "log",
  "log4rs",
+ "mockito",
  "rand",
  "regex",
  "reqwest",

@@ -27,6 +27,7 @@ tokio = { version = "1.37.0", features = ["full"] }
 url = "2.5.0"
 
 [dev-dependencies]
+mockito = "1.4.0"
 temp-env = "0.3.6"
 test-case = "3.3.1"
 

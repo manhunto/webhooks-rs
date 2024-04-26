@@ -23,7 +23,9 @@ impl Serialize for Payload {
     where
         S: Serializer,
     {
-        serializer.serialize_str(self.body.as_str())
+        let body: Value = serde_json::from_str(self.body.to_string().as_str()).unwrap();
+
+        serializer.serialize_some(&body)
     }
 }
 
