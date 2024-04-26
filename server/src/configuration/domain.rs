@@ -261,7 +261,7 @@ mod topics_list_tests {
         ];
         let sut = TopicsList::try_from(topics);
 
-        assert!(sut.is_err());
+        assert_eq!(Err(InvalidArgument("Invalid topic name".to_string())), sut);
     }
 
     #[test]
