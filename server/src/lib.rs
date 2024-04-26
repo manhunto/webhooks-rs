@@ -9,6 +9,7 @@ mod events;
 pub mod logs;
 pub mod retry;
 pub mod routes;
+mod sender;
 pub mod storage;
 #[cfg(test)]
 mod tests;

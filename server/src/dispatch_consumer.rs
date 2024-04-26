@@ -8,13 +8,13 @@ use lapin::options::{BasicAckOptions, BasicConsumeOptions};
 use lapin::types::FieldTable;
 use lapin::Channel;
 use log::{debug, error, info};
-use serde_json::Value;
 
 use crate::amqp::{Publisher, Serializer, SENT_MESSAGE_QUEUE};
 use crate::circuit_breaker::{CircuitBreaker, Error};
 use crate::cmd::AsyncMessage;
 use crate::configuration::domain::Endpoint;
 use crate::retry::RetryPolicyBuilder;
+use crate::sender::Sender;
 use crate::storage::Storage;
 
 pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage>) {
@@ -85,15 +85,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             endpoint_borrowed.id.to_string()
         );
 
-        let func = || {
-            let body: Value = serde_json::from_str(msg.payload.to_string().as_str()).unwrap();
-
-            reqwest::Client::new()
-                .post(endpoint_borrowed.url)
-                .json(&body)
-                .send()
-        };
-
+        let sender = Sender::new(msg.payload, endpoint_borrowed.url);
         let key = endpoint_id.to_string();
 
         if endpoint.borrow().to_owned().is_active() {
@@ -102,21 +94,13 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             debug!("Endpoint {} has been opened", key);
         }
 
-        match circuit_breaker.call(&key, func).await {
-            Ok(res) => {
-                debug!("Success! {}", res.status()); // todo handle errors other than 200-299 as Err
-
-                debug!("{:?}", res);
-            }
+        match circuit_breaker.call(&key, || sender.send()).await {
+            Ok(_) => {}
             Err(err) => match err {
-                Error::Closed(res) => {
-                    log_error_response(res);
-
+                Error::Closed(_) => {
                     disable_endpoint(endpoint.borrow_mut(), &storage);
                 }
-                Error::Open(res) => {
-                    log_error_response(res);
-
+                Error::Open(_) => {
                     if retry_policy.is_retryable(cmd.attempt) {
                         let cmd_to_retry = cmd.with_increased_attempt();
                         let duration = retry_policy.get_waiting_time(cmd.attempt);
@@ -148,12 +132,6 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
-}
-
-fn log_error_response(res: reqwest::Error) {
-    let status: String = res.status().map_or(String::from("-"), |s| s.to_string());
-
-    debug!("Error response! Status: {}, Error: {}", status, res);
 }
 
 fn disable_endpoint(mut endpoint: RefMut<Endpoint>, storage: &Data<Storage>) {
