@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
 use url::Url;
@@ -56,12 +57,12 @@ pub struct Endpoint {
     pub id: EndpointId,
     pub app_id: ApplicationId,
     pub url: Url,
-    pub topics: Vec<Topic>,
+    pub topics: TopicsList,
     pub status: EndpointStatus,
 }
 
 impl Endpoint {
-    pub fn new(url: String, app_id: ApplicationId, topics: Vec<Topic>) -> Self {
+    pub fn new(url: String, app_id: ApplicationId, topics: TopicsList) -> Self {
         Self {
             id: EndpointId::new(),
             url: Url::parse(url.as_str()).unwrap(),
@@ -112,6 +113,50 @@ impl Topic {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct TopicsList {
+    topics: Vec<Topic>,
+}
+
+impl TopicsList {
+    pub fn contains(&self, topic: &Topic) -> bool {
+        self.topics.contains(topic)
+    }
+}
+
+impl TryFrom<Vec<String>> for TopicsList {
+    type Error = Error;
+
+    fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
+        if value.is_empty() {
+            return Err(InvalidArgument(
+                "Topic collection could not be empty".to_string(),
+            ));
+        }
+
+        let topics: Vec<Topic> = value.iter().map(Topic::new).try_collect()?;
+
+        Ok(Self { topics })
+    }
+}
+
+impl FromIterator<String> for TopicsList {
+    fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
+        let mut vec = Vec::new();
+        for v in iter {
+            vec.push(v);
+        }
+
+        TopicsList::try_from(vec).unwrap()
+    }
+}
+
+impl From<TopicsList> for Vec<String> {
+    fn from(value: TopicsList) -> Self {
+        value.topics.into_iter().map(|t| t.name).collect()
+    }
+}
+
 impl Display for Topic {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
@@ -120,7 +165,7 @@ impl Display for Topic {
 
 #[cfg(test)]
 mod endpoint_tests {
-    use crate::configuration::domain::{ApplicationId, Endpoint, Topic};
+    use crate::configuration::domain::{ApplicationId, Endpoint, TopicsList};
 
     #[test]
     fn endpoint_disable_manually_is_not_active() {
@@ -156,7 +201,7 @@ mod endpoint_tests {
             Endpoint::new(
                 "https://localhost".to_string(),
                 ApplicationId::new(),
-                vec![Topic::new("test").unwrap()],
+                TopicsList::try_from(vec![String::from("test")]).unwrap(),
             )
         }
 
@@ -188,5 +233,45 @@ mod topic_tests {
     #[test]
     fn topic_can_be_build_from_any_type_of_str() {
         assert_strings!("order.purchased", |str| Topic::new(str).is_ok());
+    }
+}
+
+#[cfg(test)]
+mod topics_list_tests {
+    use crate::configuration::domain::TopicsList;
+    use crate::error::Error::InvalidArgument;
+
+    #[test]
+    fn cannot_be_empty() {
+        let sut = TopicsList::try_from(vec![]);
+
+        assert_eq!(
+            Err(InvalidArgument(
+                "Topic collection could not be empty".to_string()
+            )),
+            sut
+        );
+    }
+
+    #[test]
+    fn cannot_be_build_with_invalid_topics_name() {
+        let topics = vec![
+            String::from("contact.updated"),
+            String::from("contact.updated2"),
+        ];
+        let sut = TopicsList::try_from(topics);
+
+        assert!(sut.is_err());
+    }
+
+    #[test]
+    fn can_be_build_with_valid_topic_names() {
+        let topics = vec![
+            String::from("contact.updated"),
+            String::from("contact.created"),
+        ];
+        let sut = TopicsList::try_from(topics);
+
+        assert!(sut.is_ok());
     }
 }

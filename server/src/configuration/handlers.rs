@@ -1,9 +1,8 @@
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder};
-use itertools::Itertools;
 use log::debug;
 
-use crate::configuration::domain::{Application, ApplicationId, Endpoint, EndpointId, Topic};
+use crate::configuration::domain::{Application, ApplicationId, Endpoint, EndpointId, TopicsList};
 use crate::configuration::models::{
     CreateAppRequest, CreateAppResponse, CreateEndpointRequest, CreateEndpointResponse,
 };
@@ -38,12 +37,7 @@ pub async fn create_endpoint_handler(
     let app = storage.applications.get(&app_id)?;
 
     let url = request.url.clone();
-    let topics = request
-        .topics
-        .clone()
-        .into_iter()
-        .map(Topic::new)
-        .try_collect()?;
+    let topics: TopicsList = request.topics.clone().into_iter().collect();
 
     let endpoint = Endpoint::new(url, app.id, topics);
 

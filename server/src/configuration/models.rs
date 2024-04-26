@@ -1,5 +1,6 @@
-use crate::configuration::domain::{Application, Endpoint};
 use serde::{Deserialize, Serialize};
+
+use crate::configuration::domain::{Application, Endpoint};
 
 #[derive(Deserialize)]
 pub struct CreateAppRequest {
@@ -41,7 +42,7 @@ impl From<Endpoint> for CreateEndpointResponse {
             id: value.id.to_string(),
             app_id: value.app_id.to_string(),
             url: value.url.to_string(),
-            topics: value.topics.into_iter().map(|t| t.to_string()).collect(),
+            topics: value.topics.into(),
         }
     }
 }

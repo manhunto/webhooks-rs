@@ -1,10 +1,11 @@
+use std::fmt::{Display, Formatter};
+
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use serde_json::json;
-use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     InvalidArgument(String),
     EntityNotFound(String),
