@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use std::vec::IntoIter;
 
 use itertools::Itertools;
 use lazy_static::lazy_static;
@@ -125,6 +126,16 @@ pub struct TopicsList {
 }
 
 impl TopicsList {
+    pub fn new(topics: Vec<Topic>) -> Result<Self, Error> {
+        if topics.is_empty() {
+            return Err(InvalidArgument(
+                "Topic collection could not be empty".to_string(),
+            ));
+        }
+
+        Ok(Self { topics })
+    }
+
     pub fn contains(&self, topic: &Topic) -> bool {
         self.topics.contains(topic)
     }
@@ -134,15 +145,9 @@ impl TryFrom<Vec<String>> for TopicsList {
     type Error = Error;
 
     fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
-        if value.is_empty() {
-            return Err(InvalidArgument(
-                "Topic collection could not be empty".to_string(),
-            ));
-        }
-
         let topics: Vec<Topic> = value.iter().map(Topic::new).try_collect()?;
 
-        Ok(Self { topics })
+        Self::new(topics)
     }
 }
 
@@ -159,7 +164,16 @@ impl FromIterator<String> for TopicsList {
 
 impl From<TopicsList> for Vec<String> {
     fn from(value: TopicsList) -> Self {
-        value.topics.into_iter().map(|t| t.name).collect()
+        value.into_iter().map(|t| t.name).collect()
+    }
+}
+
+impl IntoIterator for TopicsList {
+    type Item = Topic;
+    type IntoIter = IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.topics.into_iter()
     }
 }
 
@@ -238,12 +252,24 @@ mod topic_tests {
 
 #[cfg(test)]
 mod topics_list_tests {
-    use crate::configuration::domain::TopicsList;
+    use crate::configuration::domain::{Topic, TopicsList};
     use crate::error::Error::InvalidArgument;
 
     #[test]
-    fn cannot_be_empty() {
+    fn cannot_be_empty_from_vec_string() {
         let sut = TopicsList::try_from(vec![]);
+
+        assert_eq!(
+            Err(InvalidArgument(
+                "Topic collection could not be empty".to_string()
+            )),
+            sut
+        );
+    }
+
+    #[test]
+    fn cannot_be_empty_new_() {
+        let sut = TopicsList::new(vec![]);
 
         assert_eq!(
             Err(InvalidArgument(
@@ -265,7 +291,7 @@ mod topics_list_tests {
     }
 
     #[test]
-    fn can_be_build_with_valid_topic_names() {
+    fn can_be_build_with_valid_topic_names_from_vec_string() {
         let topics = vec![
             String::from("contact.updated"),
             String::from("contact.created"),
@@ -273,5 +299,33 @@ mod topics_list_tests {
         let sut = TopicsList::try_from(topics);
 
         assert!(sut.is_ok());
+    }
+
+    #[test]
+    fn can_be_build_with_valid_topic_names_new() {
+        let topics = vec![
+            Topic::new("contact.updated").unwrap(),
+            Topic::new("contact.created").unwrap(),
+        ];
+        let sut = TopicsList::new(topics);
+
+        assert!(sut.is_ok());
+    }
+
+    #[test]
+    fn can_iterate() {
+        let a = Topic::new("contact.updated").unwrap();
+        let b = Topic::new("contact.created").unwrap();
+        let all = [a.clone(), b.clone()];
+
+        let sut = TopicsList::new(vec![a, b]).unwrap();
+
+        let mut count: u8 = 0;
+        for topic in sut {
+            assert!(all.contains(&topic));
+            count += 1;
+        }
+
+        assert_eq!(2, count);
     }
 }
