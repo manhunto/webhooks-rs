@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 
-use crate::configuration::domain::{ApplicationId, Topic};
+use crate::configuration::domain::{ApplicationId, Endpoint, EndpointId, Topic};
 
 #[derive(Debug, Clone)]
 pub struct Payload {
@@ -56,6 +56,37 @@ impl Message {
             app_id,
             payload,
             topic,
+        }
+    }
+}
+
+#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
+#[prefix = "rmsg"]
+pub struct RoutedMessageId {
+    id: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct RoutedMessage {
+    pub id: RoutedMessageId,
+    pub msg_id: MessageId,
+    pub endpoint_id: EndpointId,
+}
+
+impl From<(Message, Endpoint)> for RoutedMessage {
+    fn from(value: (Message, Endpoint)) -> Self {
+        let (msg, endpoint) = value;
+
+        Self::new(msg.id, endpoint.id)
+    }
+}
+
+impl RoutedMessage {
+    fn new(msg_id: MessageId, endpoint_id: EndpointId) -> Self {
+        Self {
+            id: RoutedMessageId::new(),
+            msg_id,
+            endpoint_id,
         }
     }
 }

@@ -49,11 +49,11 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         info!("message consumed: {:?}", cmd);
 
-        let msg = storage.messages.get(cmd.msg_id());
-        if msg.is_err() {
+        let routed_msg = storage.routed_messages.get(cmd.routed_msg_id());
+        if routed_msg.is_err() {
             error!(
-                "Message {} doesn't not exists and cannot be dispatched",
-                cmd.msg_id()
+                "Routed message {} doesn't exist and cannot be dispatched",
+                cmd.routed_msg_id()
             );
 
             delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -61,13 +61,26 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             continue;
         }
 
-        let endpoint_id = cmd.endpoint_id();
+        let routed_msg = routed_msg.unwrap();
+
+        let msg = storage.messages.get(routed_msg.msg_id.clone());
+        if msg.is_err() {
+            error!(
+                "Message {} doesn't exist and cannot be dispatched",
+                routed_msg.msg_id
+            );
+
+            delivery.ack(BasicAckOptions::default()).await.expect("ack");
+
+            continue;
+        }
+
+        let endpoint_id = routed_msg.endpoint_id;
         let endpoint = storage.endpoints.get(&endpoint_id);
         if endpoint.is_err() {
             error!(
                 "Endpoint {} doesn't not exists and message {} cannot be dispatched",
-                endpoint_id,
-                cmd.msg_id()
+                endpoint_id, routed_msg.msg_id
             );
 
             delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -121,8 +134,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
                 Error::Rejected => {
                     debug!(
                         "Endpoint {} is closed. Message {} rejected.",
-                        key,
-                        cmd.msg_id()
+                        key, routed_msg.msg_id
                     );
 
                     // todo do something with message? add to some "not delivered" bucket?

@@ -6,7 +6,7 @@ use crate::amqp::Publisher;
 use crate::cmd::{AsyncMessage, SentMessage};
 use crate::configuration::domain::{ApplicationId, Endpoint, Topic};
 use crate::error::ResponseError;
-use crate::events::domain::{Message, Payload};
+use crate::events::domain::{Message, Payload, RoutedMessage};
 use crate::events::models::CreateMessageRequest;
 use crate::storage::Storage;
 
@@ -50,7 +50,11 @@ pub async fn create_message_handler(
     for endpoint in active_endpoints {
         debug!("{} sending to {}", msg.id, endpoint.url);
 
-        let cmd = SentMessage::new(msg.id.clone(), endpoint.id);
+        let routed_msg = RoutedMessage::from((msg.clone(), endpoint.clone()));
+
+        storage.routed_messages.save(routed_msg.clone());
+
+        let cmd = SentMessage::new(routed_msg.id);
         let message = AsyncMessage::SentMessage(cmd);
 
         dispatcher.publish(message).await;
