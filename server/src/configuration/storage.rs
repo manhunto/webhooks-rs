@@ -11,9 +11,6 @@ pub trait ApplicationStorage {
 
     fn count(&self) -> usize;
 
-    // todo remove, unused
-    fn exists(&self, app_id: &ApplicationId) -> bool;
-
     fn get(&self, app_id: &ApplicationId) -> Result<Application, Error>;
 }
 
@@ -40,12 +37,6 @@ impl ApplicationStorage for InMemoryApplicationStorage {
         let applications = self.applications.lock().unwrap();
 
         applications.len()
-    }
-
-    fn exists(&self, app_id: &ApplicationId) -> bool {
-        let applications = self.applications.lock().unwrap();
-
-        applications.iter().any(|app| app.id.eq(app_id))
     }
 
     fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
