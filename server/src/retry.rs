@@ -60,8 +60,11 @@ struct ExponentialRetryPolicy {
 }
 
 impl ExponentialRetryPolicy {
-    fn new(delay: Duration, multiplier: usize) -> Self {
-        Self { delay, multiplier }
+    fn new(config: ExponentialConfig) -> Self {
+        Self {
+            delay: config.delay,
+            multiplier: config.multiplier,
+        }
     }
 }
 
@@ -128,8 +131,10 @@ struct ConstantRetryPolicy {
 }
 
 impl ConstantRetryPolicy {
-    fn new(delay: Duration) -> Self {
-        Self { delay }
+    fn new(config: ConstantConfig) -> Self {
+        Self {
+            delay: config.delay,
+        }
     }
 }
 
@@ -139,7 +144,6 @@ impl RetryPolicy for ConstantRetryPolicy {
     }
 }
 
-// todo use configs to construct retry policies
 #[derive(Clone)]
 enum RetryPolicyConfig {
     Exponential(ExponentialConfig),
@@ -152,9 +156,21 @@ struct ExponentialConfig {
     delay: Duration,
 }
 
+impl ExponentialConfig {
+    fn new(multiplier: usize, delay: Duration) -> Self {
+        Self { multiplier, delay }
+    }
+}
+
 #[derive(Clone)]
 struct ConstantConfig {
     delay: Duration,
+}
+
+impl ConstantConfig {
+    fn new(delay: Duration) -> Self {
+        Self { delay }
+    }
 }
 
 pub struct RetryPolicyBuilder {
@@ -178,12 +194,12 @@ impl RetryPolicyBuilder {
     }
 
     pub fn exponential(&mut self, multiplier: usize, delay: Duration) -> &mut Self {
-        self.config = Some(Exponential(ExponentialConfig { multiplier, delay }));
+        self.config = Some(Exponential(ExponentialConfig::new(multiplier, delay)));
         self
     }
 
     pub fn constant(&mut self, delay: Duration) -> &mut Self {
-        self.config = Some(Constant(ConstantConfig { delay }));
+        self.config = Some(Constant(ConstantConfig::new(delay)));
         self
     }
 
@@ -202,10 +218,8 @@ impl RetryPolicyBuilder {
         }
 
         let mut delay_policy: Box<dyn RetryPolicy> = match self.config.clone().unwrap() {
-            Exponential(config) => {
-                Box::new(ExponentialRetryPolicy::new(config.delay, config.multiplier))
-            }
-            Constant(config) => Box::new(ConstantRetryPolicy::new(config.delay)),
+            Exponential(config) => Box::new(ExponentialRetryPolicy::new(config)),
+            Constant(config) => Box::new(ConstantRetryPolicy::new(config)),
         };
 
         if let Some(factor) = self.random_factor {
@@ -235,8 +249,8 @@ mod tests {
     use test_case::test_case;
 
     use crate::retry::{
-        ConstantRetryPolicy, ExponentialRetryPolicy, RandomGenerator,
-        RandomizeDecoratedRetryPolicy, RetryPolicy,
+        ConstantConfig, ConstantRetryPolicy, ExponentialConfig, ExponentialRetryPolicy,
+        RandomGenerator, RandomizeDecoratedRetryPolicy, RetryPolicy,
     };
 
     // todo write tests for builder with the same cases
@@ -252,7 +266,8 @@ mod tests {
         attempt: usize,
         result: u64,
     ) {
-        let sut = ExponentialRetryPolicy::new(Duration::from_secs(delay_in_secs), multiplier);
+        let config = ExponentialConfig::new(multiplier, Duration::from_secs(delay_in_secs));
+        let sut = ExponentialRetryPolicy::new(config);
 
         assert_eq!(Duration::from_secs(result), sut.get_waiting_time(attempt));
     }
@@ -280,7 +295,8 @@ mod tests {
         random_generator: Box<dyn RandomGenerator>,
         factor: f64,
     ) -> RandomizeDecoratedRetryPolicy {
-        let constant = Box::new(ConstantRetryPolicy::new(Duration::from_millis(delay)));
+        let config = ConstantConfig::new(Duration::from_millis(delay));
+        let constant = Box::new(ConstantRetryPolicy::new(config));
 
         RandomizeDecoratedRetryPolicy::new(random_generator, constant, factor)
     }
