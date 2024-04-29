@@ -13,3 +13,4 @@ mod sender;
 pub mod storage;
 #[cfg(test)]
 mod tests;
+mod types;

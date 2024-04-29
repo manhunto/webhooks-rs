@@ -2,7 +2,8 @@ use std::sync::Mutex;
 
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
-use crate::events::domain::{Message, MessageId, RoutedMessage, RoutedMessageId};
+use crate::events::domain::{Message, RoutedMessage};
+use crate::types::{MessageId, RoutedMessageId};
 
 pub trait MessageStorage {
     fn save(&self, app: Message);

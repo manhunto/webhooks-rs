@@ -4,11 +4,12 @@ use log::debug;
 
 use crate::amqp::Publisher;
 use crate::cmd::{AsyncMessage, SentMessage};
-use crate::configuration::domain::{ApplicationId, Endpoint, Topic};
+use crate::configuration::domain::{Endpoint, Topic};
 use crate::error::ResponseError;
 use crate::events::domain::{Message, Payload, RoutedMessage};
 use crate::events::models::CreateMessageRequest;
 use crate::storage::Storage;
+use crate::types::ApplicationId;
 
 pub async fn create_message_handler(
     storage: Data<Storage>,

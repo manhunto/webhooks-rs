@@ -8,12 +8,7 @@ use url::Url;
 
 use crate::error::Error;
 use crate::error::Error::InvalidArgument;
-
-#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
-#[prefix = "app"]
-pub struct ApplicationId {
-    id: String,
-}
+use crate::types::{ApplicationId, EndpointId};
 
 #[derive(Debug, Clone)]
 pub struct Application {
@@ -28,12 +23,6 @@ impl Application {
             name,
         }
     }
-}
-
-#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
-#[prefix = "ep"]
-pub struct EndpointId {
-    id: String,
 }
 
 #[derive(Clone, Debug)]

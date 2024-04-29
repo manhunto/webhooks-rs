@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::events::domain::RoutedMessageId;
+use crate::types::RoutedMessageId;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "t", content = "c")]

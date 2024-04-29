@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use crate::configuration::domain::{Application, ApplicationId, Endpoint, EndpointId, Topic};
+use crate::configuration::domain::{Application, Endpoint, Topic};
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
+use crate::types::{ApplicationId, EndpointId};
 
 pub trait ApplicationStorage {
     fn save(&self, app: Application);

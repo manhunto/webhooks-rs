@@ -2,12 +2,13 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder};
 use log::debug;
 
-use crate::configuration::domain::{Application, ApplicationId, Endpoint, EndpointId, TopicsList};
+use crate::configuration::domain::{Application, Endpoint, TopicsList};
 use crate::configuration::models::{
     CreateAppRequest, CreateAppResponse, CreateEndpointRequest, CreateEndpointResponse,
 };
 use crate::error::ResponseError;
 use crate::storage::Storage;
+use crate::types::{ApplicationId, EndpointId};
 
 pub async fn create_application_handler(
     storage: Data<Storage>,

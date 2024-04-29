@@ -3,7 +3,8 @@ use std::fmt::{Display, Formatter};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 
-use crate::configuration::domain::{ApplicationId, Endpoint, EndpointId, Topic};
+use crate::configuration::domain::{Endpoint, Topic};
+use crate::types::{ApplicationId, EndpointId, MessageId, RoutedMessageId};
 
 #[derive(Debug, Clone)]
 pub struct Payload {
@@ -35,12 +36,6 @@ impl Display for Payload {
     }
 }
 
-#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
-#[prefix = "msg"]
-pub struct MessageId {
-    id: String,
-}
-
 #[derive(Debug, Clone)]
 pub struct Message {
     pub id: MessageId,
@@ -58,12 +53,6 @@ impl Message {
             topic,
         }
     }
-}
-
-#[derive(Debug, Clone, derive::Ksuid, Eq, PartialEq)]
-#[prefix = "rmsg"]
-pub struct RoutedMessageId {
-    id: String,
 }
 
 #[derive(Debug, Clone)]
