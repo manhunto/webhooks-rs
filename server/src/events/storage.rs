@@ -8,8 +8,6 @@ use crate::types::{MessageId, RoutedMessageId};
 pub trait MessageStorage {
     fn save(&self, app: Message);
 
-    fn count(&self) -> usize;
-
     fn get(&self, message_id: MessageId) -> Result<Message, Error>;
 }
 
@@ -30,12 +28,6 @@ impl MessageStorage for InMemoryMessageStorage {
         let mut messages = self.messages.lock().unwrap();
 
         messages.push(app);
-    }
-
-    fn count(&self) -> usize {
-        let messages = self.messages.lock().unwrap();
-
-        messages.len()
     }
 
     fn get(&self, message_id: MessageId) -> Result<Message, Error> {

@@ -16,6 +16,7 @@ use crate::configuration::domain::Endpoint;
 use crate::retry::RetryPolicyBuilder;
 use crate::sender::Sender;
 use crate::storage::Storage;
+use crate::time::Clock;
 
 pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage>) {
     let retry_policy = RetryPolicyBuilder::new()
@@ -38,10 +39,12 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         .unwrap();
 
     let publisher = Publisher::new(channel);
+    let clock = Clock::chrono();
 
     info!("consumer is ready");
 
     while let Some(delivery) = consumer.next().await {
+        let start_processing_time = clock.now();
         let delivery = delivery.expect("error in consumer");
         let async_msg: AsyncMessage = Serializer::deserialize(&delivery.data);
 
@@ -92,10 +95,13 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         let endpoint = Rc::new(RefCell::new(endpoint.unwrap()));
         let endpoint_borrowed = endpoint.borrow().to_owned();
 
+        let processing_time = start_processing_time - msg.created_at;
+
         debug!(
-            "Message {} for endpoint {} is being prepared to send",
+            "Message {} for endpoint {} is being prepared to send. Processing time: {} ms",
             msg.id.to_string(),
-            endpoint_borrowed.id.to_string()
+            endpoint_borrowed.id.to_string(),
+            processing_time.num_milliseconds(),
         );
 
         let sender = Sender::new(msg.payload, endpoint_borrowed.url);

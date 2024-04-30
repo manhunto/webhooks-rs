@@ -9,6 +9,7 @@ use crate::error::ResponseError;
 use crate::events::domain::{Message, Payload, RoutedMessage};
 use crate::events::models::CreateMessageRequest;
 use crate::storage::Storage;
+use crate::time::Clock;
 use crate::types::ApplicationId;
 
 pub async fn create_message_handler(
@@ -20,19 +21,17 @@ pub async fn create_message_handler(
     let app_id = ApplicationId::try_from(path.into_inner()).unwrap();
     let app = storage.applications.get(&app_id)?;
     let topic = Topic::new(request.topic.clone())?;
+    let clock = Clock::chrono();
     let msg = Message::new(
         app.id,
         Payload::from(request.payload.clone()),
         topic.clone(),
+        &clock,
     );
 
     storage.messages.save(msg.clone());
 
-    debug!(
-        "Message created: {:?}, count: {}",
-        msg,
-        storage.messages.count()
-    );
+    debug!("Message created: {:?}", msg,);
 
     let endpoints: Vec<Endpoint> = storage.endpoints.for_topic(&app_id, &msg.topic);
     let endpoints_count = endpoints.len();

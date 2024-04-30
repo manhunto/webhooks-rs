@@ -1,9 +1,11 @@
 use std::fmt::{Display, Formatter};
 
+use chrono::{DateTime, Utc};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 
 use crate::configuration::domain::{Endpoint, Topic};
+use crate::time::Clock;
 use crate::types::{ApplicationId, EndpointId, MessageId, RoutedMessageId};
 
 #[derive(Debug, Clone)]
@@ -42,15 +44,17 @@ pub struct Message {
     pub app_id: ApplicationId,
     pub payload: Payload,
     pub topic: Topic,
+    pub created_at: DateTime<Utc>,
 }
 
 impl Message {
-    pub fn new(app_id: ApplicationId, payload: Payload, topic: Topic) -> Self {
+    pub fn new(app_id: ApplicationId, payload: Payload, topic: Topic, clock: &Clock) -> Self {
         Self {
             id: MessageId::new(),
             app_id,
             payload,
             topic,
+            created_at: clock.now(),
         }
     }
 }
