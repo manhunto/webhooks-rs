@@ -39,6 +39,7 @@ an application that is high-performing, configurable and scalable.
 - [ ] Auth
 - [ ] Signed webhooks - server can verify that message was sent from valid server
 - [ ] Distributed architecture
+- [ ] Data retention
 
 ## 👨‍💻 Development
 
