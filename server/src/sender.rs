@@ -1,8 +1,43 @@
+use std::time::{Duration, Instant};
+
 use log::debug;
 use reqwest::StatusCode;
 use url::Url;
 
 use crate::events::domain::Payload;
+use crate::sender::Status::{Numeric, Unknown};
+
+pub enum Status {
+    Numeric(u16),
+    Unknown(String),
+}
+
+pub struct SentResult {
+    #[allow(dead_code)]
+    status: Status,
+    #[allow(dead_code)]
+    response_time: Duration,
+    #[allow(dead_code)]
+    body: Option<String>,
+}
+
+impl SentResult {
+    fn with_body(status: Status, response_time: Duration, body: String) -> Self {
+        Self {
+            status,
+            response_time,
+            body: Some(body),
+        }
+    }
+
+    fn without_body(status: Status, response_time: Duration) -> Self {
+        Self {
+            status,
+            response_time,
+            body: None,
+        }
+    }
+}
 
 pub struct Sender {
     payload: Payload,
@@ -15,29 +50,41 @@ impl Sender {
         Self { payload, url }
     }
 
-    pub async fn send(&self) -> Result<(), ()> {
+    pub async fn send(&self) -> Result<SentResult, SentResult> {
+        let start = Instant::now();
+
         let response = reqwest::Client::new()
             .post(self.url.to_owned())
             .json(&self.payload)
             .send()
             .await;
 
+        let end = start.elapsed();
+
         match response {
             Ok(res) => {
                 if res.status().is_success() {
                     debug!("Success response! {}", res.status());
 
-                    return Ok(());
+                    return Ok(SentResult::with_body(
+                        Numeric(res.status().as_u16()),
+                        end,
+                        res.text().await.unwrap(),
+                    ));
                 }
 
-                self.log_error_response(Some(res.status()), res.text().await.unwrap());
+                let status_code = res.status();
+                let status = status_code.as_u16();
+                let body = res.text().await.unwrap();
 
-                Err(())
+                self.log_error_response(Some(status_code), body.clone());
+
+                Err(SentResult::with_body(Numeric(status), end, body))
             }
-            Err(res) => {
-                self.log_error_response(res.status(), res.to_string());
+            Err(err) => {
+                self.log_error_response(err.status(), err.to_string());
 
-                Err(())
+                Err(SentResult::without_body(Unknown(err.to_string()), end))
             }
         }
     }
@@ -87,7 +134,10 @@ mod tests {
 
         mock.assert_async().await;
 
-        assert_eq!(expected, result);
+        match expected {
+            Ok(_) => assert!(result.is_ok()),
+            Err(_) => assert!(result.is_err()),
+        }
     }
 
     #[tokio::test]
@@ -99,4 +149,6 @@ mod tests {
 
         assert!(result.is_err())
     }
+
+    //todo: test response object
 }
