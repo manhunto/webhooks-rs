@@ -44,7 +44,6 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
     info!("consumer is ready");
 
     while let Some(delivery) = consumer.next().await {
-        let start_processing_time = clock.now();
         let delivery = delivery.expect("error in consumer");
         let async_msg: AsyncMessage = Serializer::deserialize(&delivery.data);
 
@@ -64,9 +63,9 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             continue;
         }
 
-        let routed_msg = routed_msg.unwrap();
+        let mut routed_msg = routed_msg.unwrap();
 
-        let msg = storage.messages.get(routed_msg.msg_id.clone());
+        let msg = storage.messages.get(routed_msg.msg_id);
         if msg.is_err() {
             error!(
                 "Message {} doesn't exist and cannot be dispatched",
@@ -95,6 +94,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         let endpoint = Rc::new(RefCell::new(endpoint.unwrap()));
         let endpoint_borrowed = endpoint.borrow().to_owned();
 
+        let start_processing_time = clock.now();
         let processing_time = start_processing_time - msg.created_at;
 
         debug!(
@@ -114,12 +114,27 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         }
 
         match circuit_breaker.call(&key, || sender.send()).await {
-            Ok(_) => {}
+            Ok(res) => {
+                routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                storage.routed_messages.save(routed_msg);
+
+                // todo save response body, response time
+            }
             Err(err) => match err {
-                Error::Closed(_) => {
+                Error::Closed(res) => {
+                    routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                    storage.routed_messages.save(routed_msg);
+
+                    // todo save response body, response time
+
                     disable_endpoint(endpoint.borrow_mut(), &storage);
                 }
-                Error::Open(_) => {
+                Error::Open(res) => {
+                    routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                    storage.routed_messages.save(routed_msg);
+
+                    // todo save response body, response time
+
                     if retry_policy.is_retryable(cmd.attempt) {
                         let cmd_to_retry = cmd.with_increased_attempt();
                         let duration = retry_policy.get_waiting_time(cmd.attempt);

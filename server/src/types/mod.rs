@@ -1,6 +1,6 @@
 macro_rules! make_ksuid {
     ($name: ident, $prefix: literal) => {
-        #[derive(Debug, Clone, Eq, PartialEq)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq)]
         pub struct $name {
             id: svix_ksuid::Ksuid,
         }

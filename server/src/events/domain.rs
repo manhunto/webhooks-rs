@@ -1,10 +1,12 @@
 use std::fmt::{Display, Formatter};
+use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 
 use crate::configuration::domain::{Endpoint, Topic};
+use crate::sender::{SentResult, Status};
 use crate::time::Clock;
 use crate::types::{ApplicationId, EndpointId, MessageId, RoutedMessageId};
 
@@ -64,6 +66,7 @@ pub struct RoutedMessage {
     pub id: RoutedMessageId,
     pub msg_id: MessageId,
     pub endpoint_id: EndpointId,
+    attempts: Vec<Attempt>,
 }
 
 impl From<(Message, Endpoint)> for RoutedMessage {
@@ -80,6 +83,30 @@ impl RoutedMessage {
             id: RoutedMessageId::new(),
             msg_id,
             endpoint_id,
+            attempts: Vec::new(),
         }
     }
+
+    pub fn record_attempt(&mut self, result: SentResult, processing_time: Duration) {
+        self.attempts
+            .push(self.create_attempt(result.status, processing_time))
+    }
+
+    fn create_attempt(&self, status: Status, processing_time: Duration) -> Attempt {
+        Attempt {
+            id: self.attempts.len() as u16 + 1,
+            status,
+            processing_time,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Attempt {
+    #[allow(dead_code)]
+    id: u16,
+    #[allow(dead_code)]
+    status: Status,
+    #[allow(dead_code)]
+    processing_time: Duration,
 }

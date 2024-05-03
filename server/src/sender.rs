@@ -7,18 +7,18 @@ use url::Url;
 use crate::events::domain::Payload;
 use crate::sender::Status::{Numeric, Unknown};
 
+#[derive(Debug, Clone)]
 pub enum Status {
     Numeric(u16),
     Unknown(String),
 }
 
 pub struct SentResult {
+    pub status: Status,
     #[allow(dead_code)]
-    status: Status,
+    pub response_time: Duration,
     #[allow(dead_code)]
-    response_time: Duration,
-    #[allow(dead_code)]
-    body: Option<String>,
+    pub body: Option<String>,
 }
 
 impl SentResult {
