@@ -92,7 +92,7 @@ impl RoutedMessage {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Attempt {
     #[allow(dead_code)]
     id: u16,
@@ -134,6 +134,7 @@ impl AttemptCollection {
         }
     }
 
+    // todo add clock here or to logs?
     fn push(&mut self, status: Status, processing_time: Duration) {
         let attempt =
             Attempt::new(self.attempts.len() as u16 + 1, status, processing_time).unwrap();
@@ -143,6 +144,14 @@ impl AttemptCollection {
         }
 
         self.attempts.push(attempt)
+    }
+
+    #[cfg(test)]
+    fn all(&self) -> Vec<Attempt> {
+        let mut vec = self.attempts.clone();
+        vec.sort_unstable_by(|a, b| a.id.cmp(&b.id));
+
+        vec
     }
 }
 
@@ -189,7 +198,22 @@ mod attempt_collection_test {
 
     #[test]
     fn get_attempts_from_collection() {
-        // todo
+        let mut sut = AttemptCollection::new();
+
+        sut.push(Numeric(504), Duration::from_millis(10));
+        sut.push(Numeric(502), Duration::from_millis(10));
+        sut.push(Numeric(500), Duration::from_millis(10));
+        sut.push(Numeric(400), Duration::from_millis(10));
+        sut.push(Numeric(200), Duration::from_millis(10));
+
+        let mut vec = sut.all().into_iter();
+
+        assert_eq!(Numeric(504), vec.next().unwrap().status);
+        assert_eq!(Numeric(502), vec.next().unwrap().status);
+        assert_eq!(Numeric(500), vec.next().unwrap().status);
+        assert_eq!(Numeric(400), vec.next().unwrap().status);
+        assert_eq!(Numeric(200), vec.next().unwrap().status);
+        assert_eq!(None, vec.next());
     }
 
     #[test]

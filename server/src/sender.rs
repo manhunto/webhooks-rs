@@ -7,7 +7,7 @@ use url::Url;
 use crate::events::domain::Payload;
 use crate::sender::Status::{Numeric, Unknown};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Status {
     Numeric(u16),
     Unknown(String),
