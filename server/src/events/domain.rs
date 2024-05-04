@@ -66,7 +66,7 @@ pub struct RoutedMessage {
     pub id: RoutedMessageId,
     pub msg_id: MessageId,
     pub endpoint_id: EndpointId,
-    attempts: Vec<Attempt>,
+    attempts: AttemptCollection,
 }
 
 impl From<(Message, Endpoint)> for RoutedMessage {
@@ -83,21 +83,12 @@ impl RoutedMessage {
             id: RoutedMessageId::new(),
             msg_id,
             endpoint_id,
-            attempts: Vec::new(),
+            attempts: AttemptCollection::new(),
         }
     }
 
     pub fn record_attempt(&mut self, result: SentResult, processing_time: Duration) {
-        self.attempts
-            .push(self.create_attempt(result.status, processing_time))
-    }
-
-    fn create_attempt(&self, status: Status, processing_time: Duration) -> Attempt {
-        Attempt {
-            id: self.attempts.len() as u16 + 1,
-            status,
-            processing_time,
-        }
+        self.attempts.push(result.status, processing_time)
     }
 }
 
@@ -105,8 +96,108 @@ impl RoutedMessage {
 struct Attempt {
     #[allow(dead_code)]
     id: u16,
-    #[allow(dead_code)]
     status: Status,
     #[allow(dead_code)]
     processing_time: Duration,
+}
+
+impl Attempt {
+    fn new(id: u16, status: Status, processing_time: Duration) -> Result<Self, String> {
+        if id < 1 {
+            return Err(format!("Id should be greater than 0. Was {}", id));
+        }
+
+        Ok(Self {
+            id,
+            status,
+            processing_time,
+        })
+    }
+
+    fn is_delivered(&self) -> bool {
+        match self.status {
+            Status::Numeric(status) => (200..=299).contains(&status),
+            Status::Unknown(_) => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct AttemptCollection {
+    attempts: Vec<Attempt>,
+}
+
+impl AttemptCollection {
+    fn new() -> Self {
+        Self {
+            attempts: Vec::new(),
+        }
+    }
+
+    fn push(&mut self, status: Status, processing_time: Duration) {
+        let attempt =
+            Attempt::new(self.attempts.len() as u16 + 1, status, processing_time).unwrap();
+
+        if self.attempts.iter().any(|a| a.is_delivered()) {
+            panic!("Could not push to the attempt collection when was delivered");
+        }
+
+        self.attempts.push(attempt)
+    }
+}
+
+#[cfg(test)]
+mod attempt_test {
+    use std::time::Duration;
+
+    use test_case::test_case;
+
+    use crate::events::domain::Attempt;
+    use crate::sender::Status;
+
+    #[test]
+    #[should_panic]
+    fn attempt_id_should_be_greater_than_0() {
+        Attempt::new(
+            0,
+            Status::Unknown("Test".to_string()),
+            Duration::from_millis(10),
+        )
+        .unwrap();
+    }
+
+    #[test_case(Status::Numeric(200), true)]
+    #[test_case(Status::Numeric(201), true)]
+    #[test_case(Status::Numeric(299), true)]
+    #[test_case(Status::Numeric(300), false)]
+    #[test_case(Status::Numeric(400), false)]
+    #[test_case(Status::Numeric(502), false)]
+    #[test_case(Status::Unknown("test".to_string()), false)]
+    fn attempt_is_delivered(status: Status, expected: bool) {
+        let sut = Attempt::new(1, status, Duration::from_millis(1)).unwrap();
+
+        assert_eq!(expected, sut.is_delivered());
+    }
+}
+
+#[cfg(test)]
+mod attempt_collection_test {
+    use std::time::Duration;
+
+    use crate::events::domain::AttemptCollection;
+    use crate::sender::Status::Numeric;
+
+    #[test]
+    fn get_attempts_from_collection() {
+        // todo
+    }
+
+    #[test]
+    #[should_panic]
+    fn cannot_push_attempt_when_collection_is_delivered() {
+        let mut sut = AttemptCollection::new();
+
+        sut.push(Numeric(200), Duration::from_millis(10));
+        sut.push(Numeric(200), Duration::from_millis(10));
+    }
 }
