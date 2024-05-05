@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
-use crate::events::domain::{Message, RoutedMessage};
+use crate::events::domain::{AttemptLog, Message, RoutedMessage};
 use crate::types::{MessageId, RoutedMessageId};
 
 pub trait MessageStorage {
@@ -73,5 +73,29 @@ impl RoutedMessageStorage for InMemoryRoutedMessageStorage {
             .into_iter()
             .find(|routed_message| routed_message.id.eq(&routed_message_id))
             .ok_or_else(|| EntityNotFound("Routed message not found".to_string()))
+    }
+}
+
+pub trait AttemptLogStorage {
+    fn save(&self, attempt_log: AttemptLog);
+}
+
+pub struct InMemoryAttemptLogStorage {
+    data: Mutex<Vec<AttemptLog>>,
+}
+
+impl InMemoryAttemptLogStorage {
+    pub fn new() -> Self {
+        Self {
+            data: Mutex::new(vec![]),
+        }
+    }
+}
+
+impl AttemptLogStorage for InMemoryAttemptLogStorage {
+    fn save(&self, attempt_log: AttemptLog) {
+        let mut data = self.data.lock().unwrap();
+
+        data.push(attempt_log);
     }
 }

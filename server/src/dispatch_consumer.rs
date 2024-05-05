@@ -115,25 +115,22 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         match circuit_breaker.call(&key, || sender.send()).await {
             Ok(res) => {
-                routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                let log = routed_msg.record_attempt(res, processing_time.to_std().unwrap());
                 storage.routed_messages.save(routed_msg);
-
-                // todo save response body, response time
+                storage.attempt_log.save(log);
             }
             Err(err) => match err {
                 Error::Closed(res) => {
-                    routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                    let log = routed_msg.record_attempt(res, processing_time.to_std().unwrap());
                     storage.routed_messages.save(routed_msg);
-
-                    // todo save response body, response time
+                    storage.attempt_log.save(log);
 
                     disable_endpoint(endpoint.borrow_mut(), &storage);
                 }
                 Error::Open(res) => {
-                    routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                    let log = routed_msg.record_attempt(res, processing_time.to_std().unwrap());
                     storage.routed_messages.save(routed_msg);
-
-                    // todo save response body, response time
+                    storage.attempt_log.save(log);
 
                     if retry_policy.is_retryable(cmd.attempt) {
                         let cmd_to_retry = cmd.with_increased_attempt();
@@ -151,6 +148,8 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
                             cmd_to_retry.attempt, duration
                         );
                     }
+
+                    // todo add message that wasn't delivered to some storage
                 }
                 Error::Rejected => {
                     debug!(

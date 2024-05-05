@@ -87,31 +87,32 @@ impl RoutedMessage {
         }
     }
 
-    pub fn record_attempt(&mut self, result: SentResult, processing_time: Duration) {
-        self.attempts.push(result.status, processing_time)
+    pub fn record_attempt(&mut self, result: SentResult, processing_time: Duration) -> AttemptLog {
+        let id = self.attempts.push(result.status);
+
+        AttemptLog::new(
+            self.id,
+            id,
+            processing_time,
+            result.response_time,
+            result.body,
+        )
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 struct Attempt {
-    #[allow(dead_code)]
     id: u16,
     status: Status,
-    #[allow(dead_code)]
-    processing_time: Duration,
 }
 
 impl Attempt {
-    fn new(id: u16, status: Status, processing_time: Duration) -> Result<Self, String> {
+    fn new(id: u16, status: Status) -> Result<Self, String> {
         if id < 1 {
             return Err(format!("Id should be greater than 0. Was {}", id));
         }
 
-        Ok(Self {
-            id,
-            status,
-            processing_time,
-        })
+        Ok(Self { id, status })
     }
 
     fn is_delivered(&self) -> bool {
@@ -135,15 +136,18 @@ impl AttemptCollection {
     }
 
     // todo add clock here or to logs?
-    fn push(&mut self, status: Status, processing_time: Duration) {
-        let attempt =
-            Attempt::new(self.attempts.len() as u16 + 1, status, processing_time).unwrap();
+    // fixme: improve returning id
+    fn push(&mut self, status: Status) -> u16 {
+        let attempt = Attempt::new(self.attempts.len() as u16 + 1, status).unwrap();
 
         if self.attempts.iter().any(|a| a.is_delivered()) {
             panic!("Could not push to the attempt collection when was delivered");
         }
 
-        self.attempts.push(attempt)
+        let id = attempt.id;
+        self.attempts.push(attempt);
+
+        id
     }
 
     #[cfg(test)]
@@ -155,10 +159,39 @@ impl AttemptCollection {
     }
 }
 
+pub struct AttemptLog {
+    #[allow(dead_code)]
+    routed_message_id: RoutedMessageId,
+    #[allow(dead_code)]
+    attempt_id: u16,
+    #[allow(dead_code)]
+    processing_time: Duration,
+    #[allow(dead_code)]
+    response_time: Duration,
+    #[allow(dead_code)]
+    response_body: Option<String>,
+}
+
+impl AttemptLog {
+    pub fn new(
+        routed_message_id: RoutedMessageId,
+        attempt_id: u16,
+        processing_time: Duration,
+        response_time: Duration,
+        response_body: Option<String>,
+    ) -> Self {
+        Self {
+            routed_message_id,
+            attempt_id,
+            processing_time,
+            response_time,
+            response_body,
+        }
+    }
+}
+
 #[cfg(test)]
 mod attempt_test {
-    use std::time::Duration;
-
     use test_case::test_case;
 
     use crate::events::domain::Attempt;
@@ -167,12 +200,7 @@ mod attempt_test {
     #[test]
     #[should_panic]
     fn attempt_id_should_be_greater_than_0() {
-        Attempt::new(
-            0,
-            Status::Unknown("Test".to_string()),
-            Duration::from_millis(10),
-        )
-        .unwrap();
+        Attempt::new(0, Status::Numeric(200)).unwrap();
     }
 
     #[test_case(Status::Numeric(200), true)]
@@ -183,7 +211,7 @@ mod attempt_test {
     #[test_case(Status::Numeric(502), false)]
     #[test_case(Status::Unknown("test".to_string()), false)]
     fn attempt_is_delivered(status: Status, expected: bool) {
-        let sut = Attempt::new(1, status, Duration::from_millis(1)).unwrap();
+        let sut = Attempt::new(1, status).unwrap();
 
         assert_eq!(expected, sut.is_delivered());
     }
@@ -191,8 +219,6 @@ mod attempt_test {
 
 #[cfg(test)]
 mod attempt_collection_test {
-    use std::time::Duration;
-
     use crate::events::domain::AttemptCollection;
     use crate::sender::Status::Numeric;
 
@@ -200,11 +226,11 @@ mod attempt_collection_test {
     fn get_attempts_from_collection() {
         let mut sut = AttemptCollection::new();
 
-        sut.push(Numeric(504), Duration::from_millis(10));
-        sut.push(Numeric(502), Duration::from_millis(10));
-        sut.push(Numeric(500), Duration::from_millis(10));
-        sut.push(Numeric(400), Duration::from_millis(10));
-        sut.push(Numeric(200), Duration::from_millis(10));
+        sut.push(Numeric(504));
+        sut.push(Numeric(502));
+        sut.push(Numeric(500));
+        sut.push(Numeric(400));
+        sut.push(Numeric(200));
 
         let mut vec = sut.all().into_iter();
 
@@ -217,11 +243,11 @@ mod attempt_collection_test {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "Could not push to the attempt collection when was delivered")]
     fn cannot_push_attempt_when_collection_is_delivered() {
         let mut sut = AttemptCollection::new();
 
-        sut.push(Numeric(200), Duration::from_millis(10));
-        sut.push(Numeric(200), Duration::from_millis(10));
+        sut.push(Numeric(200));
+        sut.push(Numeric(200));
     }
 }
