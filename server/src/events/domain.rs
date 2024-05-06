@@ -64,6 +64,7 @@ impl Message {
         let now = clock.now();
         if now < self.created_at {
             panic!("Unable to calculate processing time because created_at_date is after now date");
+            // fixme: should panic?
         }
 
         let processing_time = now - self.created_at;
