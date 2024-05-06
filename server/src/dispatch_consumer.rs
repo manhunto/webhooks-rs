@@ -94,6 +94,14 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         let endpoint = Rc::new(RefCell::new(endpoint.unwrap()));
         let endpoint_borrowed = endpoint.borrow().to_owned();
 
+        let sender = Sender::new(msg.payload, endpoint_borrowed.url);
+        let key = endpoint_id.to_string();
+
+        let endpoint_borrowed = endpoint.borrow().to_owned();
+        if endpoint_borrowed.is_active() && circuit_breaker.revive(&key).is_some() {
+            debug!("Endpoint {} has been reopened", key);
+        }
+
         let start_processing_time = clock.now();
         let processing_time = start_processing_time - msg.created_at;
 
@@ -103,14 +111,6 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             endpoint_borrowed.id.to_string(),
             processing_time.num_milliseconds(),
         );
-
-        let sender = Sender::new(msg.payload, endpoint_borrowed.url);
-        let key = endpoint_id.to_string();
-
-        let endpoint_borrowed = endpoint.borrow().to_owned();
-        if endpoint_borrowed.is_active() && circuit_breaker.revive(&key).is_some() {
-            debug!("Endpoint {} has been reopened", key);
-        }
 
         match circuit_breaker.call(&key, || sender.send()).await {
             Ok(res) => {
