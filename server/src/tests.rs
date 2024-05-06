@@ -25,4 +25,11 @@ macro_rules! assert_strings {
     };
 }
 
+macro_rules! dt {
+    ($str: expr) => {
+        $str.parse::<DateTime<Utc>>().unwrap()
+    };
+}
+
 pub(crate) use assert_strings;
+pub(crate) use dt;

@@ -94,7 +94,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         let endpoint = Rc::new(RefCell::new(endpoint.unwrap()));
         let endpoint_borrowed = endpoint.borrow().to_owned();
 
-        let sender = Sender::new(msg.payload, endpoint_borrowed.url);
+        let sender = Sender::new(msg.payload.clone(), endpoint_borrowed.url);
         let key = endpoint_id.to_string();
 
         let endpoint_borrowed = endpoint.borrow().to_owned();
@@ -102,32 +102,31 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             debug!("Endpoint {} has been reopened", key);
         }
 
-        let start_processing_time = clock.now();
-        let processing_time = start_processing_time - msg.created_at;
+        let processing_time = msg.calculate_processing_time(&clock);
 
         debug!(
-            "Message {} for endpoint {} is being prepared to send. Processing time: {} ms",
+            "Message {} for endpoint {} is being prepared to send. Processing time: {:?}",
             msg.id.to_string(),
             endpoint_borrowed.id.to_string(),
-            processing_time.num_milliseconds(),
+            processing_time,
         );
 
         match circuit_breaker.call(&key, || sender.send()).await {
             Ok(res) => {
-                let log = routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                let log = routed_msg.record_attempt(res, processing_time);
                 storage.routed_messages.save(routed_msg);
                 storage.attempt_log.save(log);
             }
             Err(err) => match err {
                 Error::Closed(res) => {
-                    let log = routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                    let log = routed_msg.record_attempt(res, processing_time);
                     storage.routed_messages.save(routed_msg);
                     storage.attempt_log.save(log);
 
                     disable_endpoint(endpoint.borrow_mut(), &storage);
                 }
                 Error::Open(res) => {
-                    let log = routed_msg.record_attempt(res, processing_time.to_std().unwrap());
+                    let log = routed_msg.record_attempt(res, processing_time);
                     storage.routed_messages.save(routed_msg);
                     storage.attempt_log.save(log);
 

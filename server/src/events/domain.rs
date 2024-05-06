@@ -59,6 +59,19 @@ impl Message {
             created_at: clock.now(),
         }
     }
+
+    pub fn calculate_processing_time(&self, clock: &Clock) -> Duration {
+        let now = clock.now();
+        if now < self.created_at {
+            panic!("Unable to calculate processing time because created_at_date is after now date");
+        }
+
+        let processing_time = now - self.created_at;
+
+        processing_time
+            .to_std()
+            .unwrap_or_else(|_| Duration::from_secs(i64::MAX as u64)) // fixme: is max correct?
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -186,6 +199,61 @@ impl AttemptLog {
             processing_time,
             response_time,
             response_body,
+        }
+    }
+}
+
+#[cfg(test)]
+mod message_test {
+    use chrono::{DateTime, Utc};
+    use serde_json::json;
+    use test_case::test_case;
+
+    use crate::configuration::domain::Topic;
+    use crate::events::domain::{Message, Payload};
+    use crate::tests::dt;
+    use crate::time::Clock::Fixed;
+    use crate::types::ApplicationId;
+
+    #[test]
+    #[should_panic(
+        expected = "Unable to calculate processing time because created_at_date is after now date"
+    )]
+    fn processing_time_cannot_be_in_future() {
+        let created_at = dt!("2014-11-28T12:00:09Z");
+        let now = dt!("2014-11-28T12:00:08Z");
+
+        let sut = MessageObjectMother::with_created_at_str(created_at);
+
+        let _ = sut.calculate_processing_time(&Fixed(now));
+    }
+
+    #[test_case("2014-11-28T12:00:09Z", "2014-11-28T12:00:10Z", 1000; "1 sec")]
+    #[test_case("2014-11-28T12:00:09Z", "2014-11-28T12:00:09.425Z", 425; "425 ms")]
+    #[test_case("2014-11-28T12:00:09Z", "2014-11-28T12:01:12.997Z", 63_997; "1 min")]
+    fn processing_time(created_at: &str, now: &str, expected_id_ms: u128) {
+        let created_at = dt!(created_at);
+        let now = dt!(now);
+
+        let sut = MessageObjectMother::with_created_at_str(created_at);
+
+        let processing_time = sut.calculate_processing_time(&Fixed(now));
+
+        assert_eq!(expected_id_ms, processing_time.as_millis());
+    }
+
+    struct MessageObjectMother;
+
+    impl MessageObjectMother {
+        fn with_created_at_str(created_at: DateTime<Utc>) -> Message {
+            let clock = Fixed(created_at);
+
+            Message::new(
+                ApplicationId::new(),
+                Payload::from(json!({"foo": "bar"})),
+                Topic::new("contact.created").unwrap(),
+                &clock,
+            )
         }
     }
 }
