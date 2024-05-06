@@ -71,11 +71,15 @@ impl CircuitBreaker {
         }
     }
 
-    pub fn revive(&mut self, key: &str) {
+    pub fn revive(&mut self, key: &str) -> Option<()> {
         if self.state(key.to_string()) == &State::Closed {
             self.reset_counter(key);
             self.update(key.to_owned(), State::Open);
+
+            return Some(());
         }
+
+        None
     }
 
     fn reset_counter(&mut self, key: &str) {
@@ -205,6 +209,21 @@ mod tests {
         sut.revive(&key);
 
         assert_eq!(Err(Closed(255)), sut.call(&key, err).await);
+    }
+
+    #[tokio::test]
+    async fn revive_already_opened_returns_none() {
+        let mut sut = CircuitBreaker::new(3);
+        let key = "key".to_string();
+
+        let _ = sut.call(&key, err).await;
+        assert!(sut.revive(&key).is_none());
+
+        let _ = sut.call(&key, err).await;
+        assert!(sut.revive(&key).is_none());
+
+        let _ = sut.call(&key, err).await;
+        assert!(sut.revive(&key).is_some());
     }
 
     async fn ok() -> Result<u8, u8> {

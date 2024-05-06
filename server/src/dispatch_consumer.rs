@@ -107,10 +107,9 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         let sender = Sender::new(msg.payload, endpoint_borrowed.url);
         let key = endpoint_id.to_string();
 
-        if endpoint.borrow().to_owned().is_active() {
-            circuit_breaker.revive(&key);
-
-            debug!("Endpoint {} has been opened", key);
+        let endpoint_borrowed = endpoint.borrow().to_owned();
+        if endpoint_borrowed.is_active() && circuit_breaker.revive(&key).is_some() {
+            debug!("Endpoint {} has been reopened", key);
         }
 
         match circuit_breaker.call(&key, || sender.send()).await {
