@@ -64,8 +64,17 @@ macro_rules! make_ksuid {
                     )));
                 }
 
+                let ksuid = svix_ksuid::Ksuid::from_str(id);
+                if ksuid.is_err() {
+                    return Err(crate::error::Error::InvalidArgument(format!(
+                        "'{}' type received invalid id '{}'",
+                        stringify!($name),
+                        id,
+                    )));
+                }
+
                 Ok(Self {
-                    id: svix_ksuid::Ksuid::from_str(id).unwrap(),
+                    id: ksuid.unwrap(),
                 })
             }
         }
@@ -102,6 +111,7 @@ mod ksuid_tests {
     #[test_case("invalid_1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should have prefix 'test' but have 'invalid'"; "invalid prefix")]
     #[test_case("1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "without prefix")]
     #[test_case("invalid_", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "only prefix")]
+    #[test_case("test_foo", "'TestId' type received invalid id 'foo'"; "invalid id")]
     fn invalid(id: &str, error: &str) {
         assert_eq!(
             Err(InvalidArgument(error.to_string())),
