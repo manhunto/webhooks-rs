@@ -1,5 +1,9 @@
 @url = http://localhost:8090
 
+### Health check
+GET {{url}}/v1/health_check
+Content-Type: application/json
+
 ### Create application
 POST {{url}}/v1/application
 Content-Type: application/json

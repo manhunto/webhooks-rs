@@ -1,18 +1,19 @@
+use std::net::TcpListener;
+
 use actix_web::dev::Server;
 use actix_web::web::Data;
 use actix_web::{rt, App, HttpServer};
 use log::info;
 
 use crate::amqp::{establish_connection_with_rabbit, Publisher};
-use crate::config::ServerConfig;
 use crate::dispatch_consumer::consume;
 use crate::routes::routes;
 use crate::storage::Storage;
 
-pub async fn spawn_app(config: ServerConfig) -> Result<Server, std::io::Error> {
+pub async fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
+    let channel = establish_connection_with_rabbit().await;
     let storage = Data::new(Storage::new());
     let storage_for_consumer = storage.clone();
-    let channel = establish_connection_with_rabbit().await;
     let publisher = Data::new(Publisher::new(channel.clone()));
     let app = move || {
         App::new()
@@ -23,14 +24,26 @@ pub async fn spawn_app(config: ServerConfig) -> Result<Server, std::io::Error> {
 
     rt::spawn(async move { consume(channel, "dispatcher-in-server", storage_for_consumer).await });
 
-    let ip = config.host;
-    let port: u16 = config.port;
-    let server = HttpServer::new(app).bind((ip.clone(), port))?.run();
+    let addr = listener.local_addr().unwrap();
+    let server = HttpServer::new(app).listen(listener)?.run();
 
-    info!(
-        "Webhooks server is listening for requests on {}:{}",
-        ip, port
-    );
+    info!("Webhooks server is listening for requests on {}", addr);
+
+    Ok(server)
+}
+
+// fixme: extract one build function
+pub fn run_without_rabbit_mq(listener: TcpListener) -> Result<Server, std::io::Error> {
+    let app = move || {
+        App::new()
+            .app_data(Data::new(Storage::new()))
+            .configure(routes)
+    };
+
+    let addr = listener.local_addr().unwrap();
+    let server = HttpServer::new(app).listen(listener)?.run();
+
+    info!("Webhooks server is listening for requests on {}", addr);
 
     Ok(server)
 }

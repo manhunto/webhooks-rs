@@ -7,6 +7,7 @@ mod configuration;
 pub mod dispatch_consumer;
 mod error;
 mod events;
+pub mod handlers;
 pub mod logs;
 pub mod retry;
 pub mod routes;
