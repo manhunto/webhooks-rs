@@ -7,7 +7,7 @@ use server::app::run_without_rabbit_mq;
 #[tokio::test]
 async fn health_check_works() {
     // Arrange
-    let addr = spawn_app().await;
+    let addr = spawn_app();
     let client = Client::new();
 
     // Act
@@ -22,7 +22,7 @@ async fn health_check_works() {
     assert_eq!(0, response.content_length().unwrap());
 }
 
-async fn spawn_app() -> String {
+fn spawn_app() -> String {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let addr = format!("http://{}", listener.local_addr().unwrap());
     let server = run_without_rabbit_mq(listener).unwrap();
