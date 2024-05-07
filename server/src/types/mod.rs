@@ -1,6 +1,6 @@
 macro_rules! make_ksuid {
     ($name: ident, $prefix: literal) => {
-        #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+        #[derive(Clone, Copy, Eq, PartialEq)]
         pub struct $name {
             id: svix_ksuid::Ksuid,
         }
@@ -21,6 +21,12 @@ macro_rules! make_ksuid {
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}{}{}", Self::PREFIX, Self::TERMINATOR, self.id)
+            }
+        }
+
+        impl std::fmt::Debug for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.to_string())
             }
         }
 
@@ -139,5 +145,12 @@ mod ksuid_tests {
         let (prefix, _) = binding.split_terminator('_').collect_tuple().unwrap();
 
         assert_eq!("test", prefix);
+    }
+
+    #[test]
+    fn debug_format() {
+        let sut = TestId::from_str("test_1srOrx2ZWZBpBUvZwXKQmoEYga2").unwrap();
+
+        assert_eq!("test_1srOrx2ZWZBpBUvZwXKQmoEYga2", &format!("{:?}", sut))
     }
 }
