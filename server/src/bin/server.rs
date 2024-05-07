@@ -16,11 +16,6 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     init_log();
 
-    let config = ServerConfig::init_from_env().unwrap();
-
-    let ip = config.host;
-    let port: u16 = config.port;
-
     let storage = Data::new(Storage::new());
     let storage_for_consumer = storage.clone();
     let channel = establish_connection_with_rabbit().await;
@@ -32,12 +27,17 @@ async fn main() -> std::io::Result<()> {
             .configure(routes)
     };
 
+    rt::spawn(async move { consume(channel, "dispatcher-in-server", storage_for_consumer).await });
+
+    let config = ServerConfig::init_from_env().unwrap();
+    let ip = config.host;
+    let port: u16 = config.port;
+    let server = HttpServer::new(app).bind((ip.clone(), port))?;
+
     info!(
         "Webhooks server is listening for requests on {}:{}",
         ip, port
     );
 
-    rt::spawn(async move { consume(channel, "dispatcher-in-server", storage_for_consumer).await });
-
-    HttpServer::new(app).bind((ip, port))?.run().await
+    server.run().await
 }
