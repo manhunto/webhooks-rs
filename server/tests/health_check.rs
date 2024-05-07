@@ -8,10 +8,9 @@ use server::app::run_without_rabbit_mq;
 async fn health_check_works() {
     // Arrange
     let addr = spawn_app();
-    let client = Client::new();
 
     // Act
-    let response = client
+    let response = Client::new()
         .get(&format!("{}/v1/health_check", addr))
         .send()
         .await
