@@ -1,43 +1,16 @@
-use actix_web::web::Data;
-use actix_web::{rt, App, HttpServer};
 use dotenv::dotenv;
 use envconfig::Envconfig;
-use log::info;
 
-use server::amqp::{establish_connection_with_rabbit, Publisher};
+use server::app::spawn_app;
 use server::config::ServerConfig;
-use server::dispatch_consumer::consume;
 use server::logs::init_log;
-use server::routes::routes;
-use server::storage::Storage;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     init_log();
 
-    let storage = Data::new(Storage::new());
-    let storage_for_consumer = storage.clone();
-    let channel = establish_connection_with_rabbit().await;
-    let publisher = Data::new(Publisher::new(channel.clone()));
-    let app = move || {
-        App::new()
-            .app_data(storage.clone())
-            .app_data(publisher.clone())
-            .configure(routes)
-    };
-
-    rt::spawn(async move { consume(channel, "dispatcher-in-server", storage_for_consumer).await });
-
     let config = ServerConfig::init_from_env().unwrap();
-    let ip = config.host;
-    let port: u16 = config.port;
-    let server = HttpServer::new(app).bind((ip.clone(), port))?;
 
-    info!(
-        "Webhooks server is listening for requests on {}:{}",
-        ip, port
-    );
-
-    server.run().await
+    spawn_app(config).await?.await
 }
