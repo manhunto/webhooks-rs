@@ -25,7 +25,7 @@ macro_rules! make_ksuid {
         }
 
         impl TryFrom<String> for $name {
-            type Error = String;
+            type Error = crate::error::Error;
 
             fn try_from(value: String) -> Result<Self, Self::Error> {
                 use std::str::FromStr;
@@ -35,23 +35,33 @@ macro_rules! make_ksuid {
         }
 
         impl std::str::FromStr for $name {
-            type Err = String;
+            type Err = crate::error::Error;
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 use itertools::Itertools;
 
-                let (prefix, id) = s
+                let tuple = s
                     .split_terminator(Self::TERMINATOR)
-                    .collect_tuple()
-                    .unwrap();
+                    .collect_tuple();
+
+                if tuple.is_none() {
+                    return Err(crate::error::Error::InvalidArgument(format!(
+                        "'{}' type should has '{}' prefix and valid id. Example '{}_1srOrx2ZWZBpBUvZwXKQmoEYga2'",
+                        stringify!($name),
+                        Self::PREFIX,
+                        Self::PREFIX,
+                    )));
+                }
+
+                let (prefix, id) = tuple.unwrap();
 
                 if prefix != Self::PREFIX {
-                    return Err(format!(
+                    return Err(crate::error::Error::InvalidArgument(format!(
                         "'{}' type should have prefix '{}' but have '{}'",
                         stringify!($name),
                         Self::PREFIX,
                         prefix,
-                    ));
+                    )));
                 }
 
                 Ok(Self {
@@ -78,7 +88,9 @@ mod ksuid_tests {
     use std::str::FromStr;
 
     use itertools::Itertools;
-    use svix_ksuid::{Ksuid, KsuidLike};
+    use test_case::test_case;
+
+    use crate::error::Error::InvalidArgument;
 
     make_ksuid!(TestId, "test");
 
@@ -87,14 +99,13 @@ mod ksuid_tests {
         assert!(TestId::from_str("test_1srOrx2ZWZBpBUvZwXKQmoEYga2").is_ok())
     }
 
-    #[test]
-    fn cannot_build_from_invalid_prefix() {
-        let ksuid = Ksuid::new(None, None);
-        let id = format!("invalid_{}", ksuid);
-
+    #[test_case("invalid_1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should have prefix 'test' but have 'invalid'"; "invalid prefix")]
+    #[test_case("1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "without prefix")]
+    #[test_case("invalid_", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "only prefix")]
+    fn invalid(id: &str, error: &str) {
         assert_eq!(
-            Err("'TestId' type should have prefix 'test' but have 'invalid'".to_string()),
-            TestId::try_from(id)
+            Err(InvalidArgument(error.to_string())),
+            TestId::try_from(id.to_string())
         );
     }
 

@@ -34,7 +34,7 @@ pub async fn create_endpoint_handler(
     request: Json<CreateEndpointRequest>,
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
-    let app_id = ApplicationId::try_from(path.into_inner()).unwrap();
+    let app_id = ApplicationId::try_from(path.into_inner())?;
     let app = storage.applications.get(&app_id)?;
 
     let url = request.url.clone();
@@ -81,10 +81,10 @@ async fn handle_status(
 ) -> Result<impl Responder, ResponseError> {
     let (app_id, endpoint_id) = path.into_inner();
 
-    let app_id = ApplicationId::try_from(app_id).unwrap();
+    let app_id = ApplicationId::try_from(app_id)?;
     let app = storage.applications.get(&app_id)?;
 
-    let endpoint_id = EndpointId::try_from(endpoint_id).unwrap();
+    let endpoint_id = EndpointId::try_from(endpoint_id)?;
     let mut endpoint = storage.endpoints.get(&endpoint_id)?;
 
     if !endpoint.app_id.eq(&app.id) {

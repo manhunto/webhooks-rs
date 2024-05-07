@@ -18,7 +18,7 @@ pub async fn create_message_handler(
     request: Json<CreateMessageRequest>,
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
-    let app_id = ApplicationId::try_from(path.into_inner()).unwrap();
+    let app_id = ApplicationId::try_from(path.into_inner())?;
     let app = storage.applications.get(&app_id)?;
     let topic = Topic::new(request.topic.clone())?;
     let clock = Clock::chrono();
