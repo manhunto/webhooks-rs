@@ -63,8 +63,9 @@ impl Message {
     pub fn calculate_processing_time(&self, clock: &Clock) -> Duration {
         let now = clock.now();
         if now < self.created_at {
-            panic!("Unable to calculate processing time because created_at_date is after now date");
-            // fixme: should panic?
+            unreachable!(
+                "Unable to calculate processing time because created_at_date is after now date"
+            );
         }
 
         let processing_time = now - self.created_at;
