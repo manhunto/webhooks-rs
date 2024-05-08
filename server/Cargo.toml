@@ -21,7 +21,7 @@ rand = "0.8.5"
 regex = "1.10.4"
 reqwest = { version = "0.12.4", features = ["json"] }
 serde = { version = "1.0.200", features = ["derive"] }
-serde_json = { version = "1.0.116", features = ["raw_value"] }
+serde_json = { version = "1.0.117", features = ["raw_value"] }
 svix-ksuid = { version = "^0.8.0", features = ["serde"] }
 tokio = { version = "1.37.0", features = ["full"] }
 url = "2.5.0"
