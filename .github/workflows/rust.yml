@@ -43,6 +43,7 @@ jobs:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
           working-directory: ${{github.workspace}}
+          verbose: true
   lint:
     runs-on: ubuntu-latest
     steps:
