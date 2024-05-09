@@ -8,9 +8,7 @@
 </div>
 
 <p align="center">
-    <a href="https://codecov.io/gh/manhunto/webhooks-rs" > 
-      <img src="https://codecov.io/gh/manhunto/webhooks-rs/graph/badge.svg?token=C10FE6520S"/> 
-    </a>
+    <a href="https://codecov.io/gh/manhunto/webhooks-rs"><img src="https://codecov.io/gh/manhunto/webhooks-rs/graph/badge.svg?token=C10FE6520S"/></a>
     <img src="https://github.com/manhunto/webhooks-rs/actions/workflows/rust.yml/badge.svg?branch=master" alt="build"/>
     <img src="https://img.shields.io/github/contributors/manhunto/webhooks-rs" alt="contributors"/>
     <img src="https://img.shields.io/github/commit-activity/m/manhunto/webhooks-rs" alt="commit-activity"/>
