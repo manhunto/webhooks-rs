@@ -56,5 +56,3 @@ an application that is high-performing, configurable and scalable.
 
 If you want to contribute to the growth of this project, please follow
 the [conventional commits](https://www.conventionalcommits.org/) in your pull requests.
-
-🌴
