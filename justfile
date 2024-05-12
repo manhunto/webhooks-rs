@@ -45,8 +45,8 @@ test:
 clippy:
     cargo clippy --all-targets --all-features -- -D warnings
 
-docker-up:
-    docker compose up --detach
+docker-up *OPTIONS:
+    docker compose up {{ OPTIONS }}
 
 docker-down:
     docker compose down --remove-orphans
