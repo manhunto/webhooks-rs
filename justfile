@@ -46,7 +46,7 @@ clippy:
     cargo clippy --all-targets --all-features -- -D warnings
 
 docker-up *OPTIONS:
-    docker compose up {{ OPTIONS }}
+    docker compose --env-file=.env up {{ OPTIONS }}
 
 docker-down:
     docker compose down --remove-orphans

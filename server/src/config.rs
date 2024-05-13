@@ -13,3 +13,26 @@ impl ServerConfig {
         format!("http://{}:{}", self.host, self.port)
     }
 }
+
+#[derive(Envconfig)]
+pub struct PostgresConfig {
+    #[envconfig(from = "POSTGRES_HOST")]
+    host: String,
+    #[envconfig(from = "POSTGRES_PORT")]
+    port: u16,
+    #[envconfig(from = "POSTGRES_USER")]
+    user: String,
+    #[envconfig(from = "POSTGRES_PASSWORD")]
+    password: String,
+    #[envconfig(from = "POSTGRES_DB")]
+    db: String,
+}
+
+impl PostgresConfig {
+    pub fn connection_string(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.user, self.password, self.host, self.port, self.db
+        )
+    }
+}
