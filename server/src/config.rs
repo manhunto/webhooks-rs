@@ -36,3 +36,24 @@ impl PostgresConfig {
         )
     }
 }
+
+#[derive(Envconfig)]
+pub struct AMQPConfig {
+    #[envconfig(from = "AMQP_HOST")]
+    host: String,
+    #[envconfig(from = "AMQP_PORT")]
+    port: u16,
+    #[envconfig(from = "AMQP_USER")]
+    user: String,
+    #[envconfig(from = "AMQP_PASSWORD")]
+    password: String,
+}
+
+impl AMQPConfig {
+    pub fn connection_string(&self) -> String {
+        format!(
+            "amqp://{}:{}@{}:{}",
+            self.user, self.password, self.host, self.port
+        )
+    }
+}

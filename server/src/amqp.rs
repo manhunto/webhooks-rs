@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
+use envconfig::Envconfig;
 use lapin::options::{
     BasicPublishOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions,
 };
@@ -13,13 +14,14 @@ use serde::Serialize;
 use serde_json::Value;
 
 use crate::cmd::AsyncMessage;
+use crate::config::AMQPConfig;
 
 pub const SENT_MESSAGE_QUEUE: &str = "sent-message";
 const SENT_MESSAGE_EXCHANGE: &str = "sent-message-exchange";
 
 pub async fn establish_connection_with_rabbit() -> Channel {
-    let addr = "amqp://guest:guest@localhost:5672";
-    let conn = Connection::connect(addr, ConnectionProperties::default())
+    let addr = AMQPConfig::init_from_env().unwrap().connection_string();
+    let conn = Connection::connect(&addr, ConnectionProperties::default())
         .await
         .unwrap();
 
