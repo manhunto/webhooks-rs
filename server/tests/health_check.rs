@@ -1,17 +1,17 @@
 use reqwest::Client;
 
-use crate::common::spawn_app;
+use crate::common::TestServer;
 
 mod common;
 
 #[tokio::test]
 async fn health_check_works() {
     // Arrange
-    let addr = spawn_app();
+    let server = TestServer::run();
 
     // Act
     let response = Client::new()
-        .get(&format!("{}/v1/health_check", addr))
+        .get(&server.url("health_check"))
         .send()
         .await
         .expect("Failed to executed request");
