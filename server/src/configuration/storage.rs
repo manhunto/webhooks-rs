@@ -34,7 +34,7 @@ impl ApplicationStorage {
     pub async fn count(&self) -> usize {
         query!(
             r#"
-            SELECT COUNT(*)
+            SELECT COUNT(*) FROM applications
         "#
         )
         .fetch_one(&self.pool)
