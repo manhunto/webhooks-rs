@@ -54,3 +54,6 @@ docker-down:
 check: build clippy test
     cargo sort --workspace
     cargo fmt --check --all
+
+init-db:
+    ./scripts/init_db.sh

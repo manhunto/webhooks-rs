@@ -1,14 +1,18 @@
 use std::net::TcpListener;
 
+use dotenv::dotenv;
+
 use server::app::run_without_rabbit_mq;
 
 struct TestServerBuilder;
 
 impl TestServerBuilder {
-    fn run() -> TestServer {
+    async fn run() -> TestServer {
+        dotenv().ok();
+
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = format!("http://{}", listener.local_addr().unwrap());
-        let server = run_without_rabbit_mq(listener).unwrap();
+        let server = run_without_rabbit_mq(listener).await.unwrap();
 
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(server);
@@ -22,8 +26,8 @@ pub struct TestServer {
 }
 
 impl TestServer {
-    pub fn run() -> Self {
-        TestServerBuilder::run()
+    pub async fn run() -> Self {
+        TestServerBuilder::run().await
     }
 
     pub fn url(&self, endpoint: &str) -> String {

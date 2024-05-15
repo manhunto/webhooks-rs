@@ -16,6 +16,12 @@ macro_rules! make_ksuid {
                     id: Ksuid::new(None, None),
                 }
             }
+
+            pub fn to_base62(self) -> String {
+                use svix_ksuid::KsuidLike;
+
+                self.id.to_base62()
+            }
         }
 
         impl std::fmt::Display for $name {
@@ -151,6 +157,13 @@ mod ksuid_tests {
     fn debug_format() {
         let sut = TestId::from_str("test_1srOrx2ZWZBpBUvZwXKQmoEYga2").unwrap();
 
-        assert_eq!("test_1srOrx2ZWZBpBUvZwXKQmoEYga2", &format!("{:?}", sut))
+        assert_eq!("test_1srOrx2ZWZBpBUvZwXKQmoEYga2", &format!("{:?}", sut));
+    }
+
+    #[test]
+    fn test_to_base62() {
+        let sut = TestId::from_str("test_1srOrx2ZWZBpBUvZwXKQmoEYga2").unwrap();
+
+        assert_eq!("1srOrx2ZWZBpBUvZwXKQmoEYga2", sut.to_base62());
     }
 }

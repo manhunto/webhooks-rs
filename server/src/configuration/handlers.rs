@@ -16,12 +16,12 @@ pub async fn create_application_handler(
 ) -> impl Responder {
     let app = Application::new(request.name.to_string());
 
-    storage.applications.save(app.clone());
+    storage.applications.save(app.clone()).await;
 
     debug!(
         "Application created: {:?}, count: {}",
         app,
-        storage.applications.count()
+        storage.applications.count().await
     );
 
     let response = CreateAppResponse::from(app);
@@ -35,7 +35,7 @@ pub async fn create_endpoint_handler(
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
     let app_id = ApplicationId::try_from(path.into_inner())?;
-    let app = storage.applications.get(&app_id)?;
+    let app = storage.applications.get(&app_id).await?;
 
     let url = request.url.clone();
     let topics: TopicsList = request.topics.clone().into_iter().collect();
@@ -82,7 +82,7 @@ async fn handle_status(
     let (app_id, endpoint_id) = path.into_inner();
 
     let app_id = ApplicationId::try_from(app_id)?;
-    let app = storage.applications.get(&app_id)?;
+    let app = storage.applications.get(&app_id).await?;
 
     let endpoint_id = EndpointId::try_from(endpoint_id)?;
     let mut endpoint = storage.endpoints.get(&endpoint_id)?;

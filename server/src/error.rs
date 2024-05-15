@@ -4,17 +4,20 @@ use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use serde_json::json;
+use sqlx::Error as SqlxError;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
     InvalidArgument(String),
     EntityNotFound(String),
+    Sqlx,
 }
 
 #[derive(Debug)]
 pub enum ResponseError {
     NotFound(String),
     BadRequest(String),
+    InternalError,
 }
 
 impl Display for ResponseError {
@@ -22,6 +25,7 @@ impl Display for ResponseError {
         let msg = match self {
             ResponseError::NotFound(val) => val,
             ResponseError::BadRequest(val) => val,
+            ResponseError::InternalError => "",
         };
 
         write!(f, "{}", msg)
@@ -33,6 +37,7 @@ impl actix_web::error::ResponseError for ResponseError {
         match *self {
             ResponseError::NotFound(_) => StatusCode::NOT_FOUND,
             ResponseError::BadRequest(_) => StatusCode::BAD_REQUEST,
+            ResponseError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -50,6 +55,16 @@ impl From<Error> for ResponseError {
         match value {
             Error::EntityNotFound(msg) => ResponseError::NotFound(msg),
             Error::InvalidArgument(msg) => ResponseError::BadRequest(msg),
+            Error::Sqlx => ResponseError::InternalError,
+        }
+    }
+}
+
+impl From<sqlx::Error> for Error {
+    fn from(value: SqlxError) -> Self {
+        match value {
+            SqlxError::RowNotFound => Self::EntityNotFound("Entity not found".to_string()),
+            _ => Self::Sqlx,
         }
     }
 }

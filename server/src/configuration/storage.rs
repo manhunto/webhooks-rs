@@ -1,52 +1,63 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use sqlx::{query, PgPool};
+
 use crate::configuration::domain::{Application, Endpoint, Topic};
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
 use crate::types::{ApplicationId, EndpointId};
 
-pub trait ApplicationStorage {
-    fn save(&self, app: Application);
-
-    fn count(&self) -> usize;
-
-    fn get(&self, app_id: &ApplicationId) -> Result<Application, Error>;
+pub struct ApplicationStorage {
+    pool: PgPool,
 }
 
-pub struct InMemoryApplicationStorage {
-    applications: Mutex<Vec<Application>>,
-}
-
-impl InMemoryApplicationStorage {
-    pub fn new() -> Self {
-        Self {
-            applications: Mutex::new(vec![]),
-        }
-    }
-}
-
-impl ApplicationStorage for InMemoryApplicationStorage {
-    fn save(&self, app: Application) {
-        let mut applications = self.applications.lock().unwrap();
-
-        applications.push(app);
+impl ApplicationStorage {
+    pub fn new(pool: PgPool) -> Self {
+        ApplicationStorage { pool }
     }
 
-    fn count(&self) -> usize {
-        let applications = self.applications.lock().unwrap();
-
-        applications.len()
+    pub async fn save(&self, app: Application) {
+        query!(
+            r#"
+            INSERT INTO applications (id, name)
+            VALUES ($1, $2)
+        "#,
+            app.id.to_base62(),
+            app.name
+        )
+        .execute(&self.pool)
+        .await
+        .unwrap();
     }
 
-    fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
-        let applications = self.applications.lock().unwrap();
+    pub async fn count(&self) -> usize {
+        query!(
+            r#"
+            SELECT COUNT(*)
+        "#
+        )
+        .fetch_one(&self.pool)
+        .await
+        .unwrap()
+        .count
+        .unwrap() as usize
+    }
 
-        applications
-            .clone()
-            .into_iter()
-            .find(|app| app.id.eq(app_id))
-            .ok_or_else(|| EntityNotFound("Application not found".to_string()))
+    pub async fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
+        let record = query!(
+            r#"
+            SELECT * FROM applications where id = $1
+        "#,
+            app_id.to_string()
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(Application {
+            name: record.name,
+            id: ApplicationId::try_from(format!("app_{}", record.id)).unwrap(), // fixme: without adding prefix
+        })
     }
 }
 
