@@ -112,10 +112,23 @@ jobs:
         run: cargo fmt --all --check
   udeps:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.3-alpine3.19
+        env:
+          POSTGRES_USER: webhooks
+          POSTGRES_PASSWORD: webhooks
+          POSTGRES_DB: webhooks
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
+      - name: Init db
+        run: ./scripts/init-db.sh
       - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
