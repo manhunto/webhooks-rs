@@ -11,14 +11,13 @@ env:
   RUSTFLAGS: "-Dwarnings"
   SQLX_VERSION: 0.7.4
   SQLX_FEATURES: "rustls,postgres"
-  POSTGRES_VERSION: 16.3-alpine3.19
 
 jobs:
   build:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:${{ env.POSTGRES_VERSION }}
+        image: postgres:16.3-alpine3.19
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -30,12 +29,7 @@ jobs:
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
       - name: Install sqlx-cli
-        run:
-          cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
+        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
       - name: Init db
         run: ./scripts/init-db.sh
       - name: Build
@@ -44,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:${{ env.POSTGRES_VERSION }}
+        image: postgres:16.3-alpine3.19
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -56,12 +50,7 @@ jobs:
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
       - name: Install sqlx-cli
-        run:
-          cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
+        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
       - name: Init db
         run: ./scripts/init-db.sh
       - name: Run tests
@@ -70,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:${{ env.POSTGRES_VERSION }}
+        image: postgres:16.3-alpine3.19
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -83,17 +72,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install sqlx-cli
-        run:
-          cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
+        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
       - name: Init db
         run: ./scripts/init-db.sh
       - name: Generate code coverage
-        run: |
-          cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
+        run: cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4.3.1
         with:
@@ -104,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:${{ env.POSTGRES_VERSION }}
+        image: postgres:16.3-alpine3.19
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -116,12 +99,7 @@ jobs:
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
       - name: Install sqlx-cli
-        run:
-          cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
+        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
       - name: Init db
         run: ./scripts/init-db.sh
       - name: Run Clippy
