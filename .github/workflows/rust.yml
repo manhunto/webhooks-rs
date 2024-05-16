@@ -33,9 +33,9 @@ jobs:
         ports:
           - 5432:5432
     steps:
+      - uses: actions/checkout@v4
       - name: Init db
         run: ./scripts/init_db.sh
-      - uses: actions/checkout@v4
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
       - name: Install sqlx-cli
