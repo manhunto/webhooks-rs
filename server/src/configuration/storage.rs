@@ -49,7 +49,7 @@ impl ApplicationStorage {
             r#"
             SELECT * FROM applications where id = $1
         "#,
-            app_id.to_string()
+            app_id.to_base62()
         )
         .fetch_one(&self.pool)
         .await?;

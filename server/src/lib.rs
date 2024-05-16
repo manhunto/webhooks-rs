@@ -16,4 +16,4 @@ pub mod storage;
 #[cfg(test)]
 mod tests;
 pub mod time;
-mod types;
+pub mod types;

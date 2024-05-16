@@ -7,24 +7,41 @@ use svix_ksuid::{Ksuid, KsuidLike};
 
 use server::app::run_without_rabbit_mq;
 use server::config::PostgresConfig;
+use server::logs::init_log;
+use server::storage::Storage;
 
-struct TestServerBuilder;
+#[derive(Default)]
+struct TestServerBuilder {
+    logs: bool,
+}
 
 impl TestServerBuilder {
-    async fn run() -> TestServer {
+    fn with_logs(&mut self) -> &mut Self {
+        self.logs = true;
+        self
+    }
+
+    async fn run(&self) -> TestServer {
         dotenv().ok();
+
+        if self.logs {
+            init_log();
+        }
 
         let pool = Self::prepare_db().await;
 
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = format!("http://{}", listener.local_addr().unwrap());
 
-        let server = run_without_rabbit_mq(listener, pool).await.unwrap();
+        let server = run_without_rabbit_mq(listener, pool.clone()).await.unwrap();
 
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(server);
 
-        TestServer { server_url: addr }
+        TestServer {
+            server_url: addr,
+            storage: Storage::new(pool),
+        }
     }
 
     async fn prepare_db() -> Pool<Postgres> {
@@ -58,14 +75,25 @@ impl TestServerBuilder {
 
 pub struct TestServer {
     server_url: String,
+    storage: Storage,
 }
 
 impl TestServer {
     pub async fn run() -> Self {
-        TestServerBuilder::run().await
+        TestServerBuilder::default().run().await
+    }
+
+    #[allow(dead_code)]
+    pub async fn run_with_logs() -> Self {
+        TestServerBuilder::default().with_logs().run().await
     }
 
     pub fn url(&self, endpoint: &str) -> String {
         format!("{}/v1/{}", self.server_url, endpoint)
+    }
+
+    #[allow(dead_code)]
+    pub fn storage(&self) -> &Storage {
+        &self.storage
     }
 }

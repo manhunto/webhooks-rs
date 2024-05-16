@@ -1,6 +1,7 @@
 use std::net::TcpListener;
 
 use actix_web::dev::Server;
+use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{rt, App, HttpServer};
 use envconfig::Envconfig;
@@ -23,6 +24,7 @@ pub async fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
     let publisher = Data::new(Publisher::new(channel.clone()));
     let app = move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(storage.clone())
             .app_data(publisher.clone())
             .configure(routes)
@@ -47,7 +49,8 @@ pub async fn run_without_rabbit_mq(
 
     let app = move || {
         App::new()
-            .app_data(Data::new(storage.clone()))
+            .wrap(Logger::default())
+            .app_data(storage.clone())
             .configure(routes)
     };
 
