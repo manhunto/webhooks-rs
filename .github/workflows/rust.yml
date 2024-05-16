@@ -34,10 +34,9 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - name: Init db
-        run: ./scripts/init_db.sh
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
+      - run: ls -la
       - name: Install sqlx-cli
         run:
           cargo install sqlx-cli
@@ -45,6 +44,8 @@ jobs:
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
           --locked
+      - name: Init db
+        run: ./scripts/init_db.sh
       - name: Run tests
         run: cargo test --workspace --verbose
   coverage:
