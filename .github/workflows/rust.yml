@@ -11,13 +11,14 @@ env:
   RUSTFLAGS: "-Dwarnings"
   SQLX_VERSION: 0.7.4
   SQLX_FEATURES: "rustls,postgres"
+  POSTGRES_VERSION: 16.3-alpine3.19
 
 jobs:
   build:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:${{ env.POSTGRES_VERSION }}
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -43,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:${{ env.POSTGRES_VERSION }}
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -69,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:${{ env.POSTGRES_VERSION }}
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -88,6 +89,8 @@ jobs:
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
           --locked
+      - name: Init db
+        run: ./scripts/init-db.sh
       - name: Generate code coverage
         run: |
           cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
@@ -101,7 +104,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:${{ env.POSTGRES_VERSION }}
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -119,6 +122,8 @@ jobs:
           --features ${{ env.SQLX_FEATURES }}
           --no-default-features
           --locked
+      - name: Init db
+        run: ./scripts/init-db.sh
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features
   format:
