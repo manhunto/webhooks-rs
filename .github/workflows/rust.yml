@@ -114,6 +114,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache setup
+        uses: Swatinem/rust-cache@v2
       - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
