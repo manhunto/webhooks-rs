@@ -17,7 +17,7 @@ services:
     container_name: postgres
     image: postgres:16.3-alpine3.19
     ports:
-      - "54320:5432"
+      - "5432:5432"
     env_file:
       - .env
 networks:

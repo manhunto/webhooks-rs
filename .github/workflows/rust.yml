@@ -9,6 +9,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-Dwarnings"
+  SQLX_VERSION: 0.7.4
+  SQLX_FEATURES: "rustls,postgres"
 
 jobs:
   build:
@@ -21,10 +23,28 @@ jobs:
         run: cargo build --all-targets --verbose
   tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.3-alpine3.19
+        env:
+          POSTGRES_USER: webhooks
+          POSTGRES_PASSWORD: webhooks
+          POSTGRES_DB: webhooks
+        ports:
+          - 5432:5432
     steps:
+      - name: Init db
+        run: ./scripts/init_db.sh
       - uses: actions/checkout@v4
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
       - name: Run tests
         run: cargo test --workspace --verbose
   coverage:
