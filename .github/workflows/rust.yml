@@ -15,10 +15,28 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.3-alpine3.19
+        env:
+          POSTGRES_USER: webhooks
+          POSTGRES_PASSWORD: webhooks
+          POSTGRES_DB: webhooks
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
+      - name: Init db
+        run: ./scripts/init-db.sh
       - name: Build
         run: cargo build --all-targets --verbose
   tests:
@@ -49,11 +67,27 @@ jobs:
         run: cargo test --workspace --verbose
   coverage:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.3-alpine3.19
+        env:
+          POSTGRES_USER: webhooks
+          POSTGRES_PASSWORD: webhooks
+          POSTGRES_DB: webhooks
+        ports:
+          - 5432:5432
     container:
       image: xd009642/tarpaulin:develop-nightly
       options: --security-opt seccomp=unconfined
     steps:
       - uses: actions/checkout@v4
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
       - name: Generate code coverage
         run: |
           cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
@@ -63,12 +97,28 @@ jobs:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-  lint:
+  clippy:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.3-alpine3.19
+        env:
+          POSTGRES_USER: webhooks
+          POSTGRES_PASSWORD: webhooks
+          POSTGRES_DB: webhooks
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
+      - name: Install sqlx-cli
+        run:
+          cargo install sqlx-cli
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features
   format:
