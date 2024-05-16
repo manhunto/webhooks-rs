@@ -55,34 +55,34 @@ jobs:
         run: ./scripts/init-db.sh
       - name: Run tests
         run: cargo test --workspace --verbose
-  coverage:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16.3-alpine3.19
-        env:
-          POSTGRES_USER: webhooks
-          POSTGRES_PASSWORD: webhooks
-          POSTGRES_DB: webhooks
-        ports:
-          - 5432:5432
-    container:
-      image: xd009642/tarpaulin:develop-nightly
-      options: --security-opt seccomp=unconfined
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install sqlx-cli
-        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
-      - name: Init db
-        run: ./scripts/init-db.sh
-      - name: Generate code coverage
-        run: cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.3.1
-        with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
+  #  coverage:
+  #    runs-on: ubuntu-latest
+  #    services:
+  #      postgres:
+  #        image: postgres:16.3-alpine3.19
+  #        env:
+  #          POSTGRES_USER: webhooks
+  #          POSTGRES_PASSWORD: webhooks
+  #          POSTGRES_DB: webhooks
+  #        ports:
+  #          - 5432:5432
+  #    container:
+  #      image: xd009642/tarpaulin:develop-nightly
+  #      options: --security-opt seccomp=unconfined
+  #    steps:
+  #      - uses: actions/checkout@v4
+  #      - name: Install sqlx-cli
+  #        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
+  #      - name: Init db
+  #        run: ./scripts/init-db.sh
+  #      - name: Generate code coverage
+  #        run: cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
+  #      - name: Upload coverage reports to Codecov
+  #        uses: codecov/codecov-action@v4.3.1
+  #        with:
+  #          fail_ci_if_error: true
+  #          token: ${{ secrets.CODECOV_TOKEN }}
+  #          verbose: true
   clippy:
     runs-on: ubuntu-latest
     services:
