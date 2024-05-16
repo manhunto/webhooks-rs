@@ -39,9 +39,10 @@ pub async fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
 }
 
 // fixme: extract one build function
-pub async fn run_without_rabbit_mq(listener: TcpListener) -> Result<Server, std::io::Error> {
-    let con_string = PostgresConfig::init_from_env().unwrap().connection_string();
-    let pool = PgPool::connect(&con_string).await.unwrap();
+pub async fn run_without_rabbit_mq(
+    listener: TcpListener,
+    pool: PgPool,
+) -> Result<Server, std::io::Error> {
     let storage = Data::new(Storage::new(pool));
 
     let app = move || {

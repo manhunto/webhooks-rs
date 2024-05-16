@@ -35,6 +35,27 @@ impl PostgresConfig {
             self.user, self.password, self.host, self.port, self.db
         )
     }
+
+    pub fn connection_string_without_db(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}",
+            self.user, self.password, self.host, self.port
+        )
+    }
+
+    pub fn with_db(&self, db: &str) -> Self {
+        Self {
+            host: self.host.clone(),
+            port: self.port,
+            user: self.user.clone(),
+            password: self.password.clone(),
+            db: db.to_string(),
+        }
+    }
+
+    pub fn db(&self) -> String {
+        self.db.clone()
+    }
 }
 
 #[derive(Envconfig)]
