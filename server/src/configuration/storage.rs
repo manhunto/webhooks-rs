@@ -1,11 +1,8 @@
-use std::collections::HashMap;
-use std::sync::Mutex;
-
-use sqlx::{query, PgPool};
+use serde_json::json;
+use sqlx::{query, query_as, PgPool};
 
 use crate::configuration::domain::{Application, Endpoint, Topic};
 use crate::error::Error;
-use crate::error::Error::EntityNotFound;
 use crate::types::{ApplicationId, EndpointId};
 
 pub struct ApplicationStorage {
@@ -14,7 +11,7 @@ pub struct ApplicationStorage {
 
 impl ApplicationStorage {
     pub fn new(pool: PgPool) -> Self {
-        ApplicationStorage { pool }
+        Self { pool }
     }
 
     pub async fn save(&self, app: Application) {
@@ -47,7 +44,7 @@ impl ApplicationStorage {
     pub async fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
         let record = query!(
             r#"
-            SELECT * FROM applications where id = $1
+            SELECT * FROM applications WHERE id = $1
         "#,
             app_id.to_base62()
         )
@@ -61,61 +58,70 @@ impl ApplicationStorage {
     }
 }
 
-pub trait EndpointStorage {
-    fn save(&self, endpoint: Endpoint);
-
-    fn count(&self) -> usize;
-
-    fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint>;
-
-    fn get(&self, endpoint_id: &EndpointId) -> Result<Endpoint, Error>;
+pub struct EndpointStorage {
+    pool: PgPool,
 }
 
-pub struct InMemoryEndpointStorage {
-    endpoints: Mutex<HashMap<String, Endpoint>>,
-}
-
-impl InMemoryEndpointStorage {
-    pub fn new() -> Self {
-        Self {
-            endpoints: Mutex::new(HashMap::new()),
-        }
-    }
-}
-
-impl EndpointStorage for InMemoryEndpointStorage {
-    fn save(&self, endpoint: Endpoint) {
-        let mut endpoints = self.endpoints.lock().unwrap();
-
-        endpoints.insert(endpoint.id.to_string(), endpoint.clone());
+impl EndpointStorage {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
 
-    fn count(&self) -> usize {
-        let endpoints = self.endpoints.lock().unwrap();
-
-        endpoints.len()
+    pub async fn save(&self, endpoint: Endpoint) {
+        query!(
+            r#"
+        INSERT INTO endpoints (id, app_id, url, topics, status)
+        VALUES ($1, $2, $3, $4, $5)
+        "#,
+            endpoint.id.to_base62(),
+            endpoint.app_id.to_base62(),
+            endpoint.url.to_string(),
+            json!(endpoint.topics.as_strings()),
+            endpoint.status.to_string()
+        )
+        .execute(&self.pool)
+        .await
+        .unwrap();
     }
 
-    fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint> {
-        let endpoints = self.endpoints.lock().unwrap();
+    pub async fn count(&self) -> usize {
+        query!(
+            r#"
+            SELECT COUNT(*) FROM endpoints
+        "#
+        )
+        .fetch_one(&self.pool)
+        .await
+        .unwrap()
+        .count
+        .unwrap() as usize
+    }
+
+    pub async fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint> {
+        let endpoints = query_as::<_, Endpoint>(
+            r#"
+            SELECT * FROM endpoints WHERE app_id = $1
+        "#,
+        )
+        .bind(application_id.to_base62())
+        .fetch_all(&self.pool)
+        .await
+        .expect("Error in query");
 
         endpoints
-            .values()
-            .clone()
-            .filter(|endpoint| {
-                endpoint.app_id.eq(application_id) && endpoint.topics.contains(topic)
-            })
-            .cloned()
-            .collect()
+            .into_iter()
+            .filter(|e| e.topics.contains(topic))
+            .collect() // todo: add it to the query
     }
 
-    fn get(&self, endpoint_id: &EndpointId) -> Result<Endpoint, Error> {
-        let endpoints = self.endpoints.lock().unwrap();
-
-        endpoints
-            .values()
-            .find(|endpoint| endpoint.id.eq(endpoint_id))
-            .ok_or_else(|| EntityNotFound("Endpoint not found".to_string()))
-            .cloned()
+    pub async fn get(&self, endpoint_id: &EndpointId) -> Result<Endpoint, Error> {
+        Ok(query_as::<_, Endpoint>(
+            r#"
+            SELECT * FROM endpoints WHERE id = $1
+        "#,
+        )
+        .bind(endpoint_id.to_base62())
+        .fetch_one(&self.pool)
+        .await?)
     }
 }

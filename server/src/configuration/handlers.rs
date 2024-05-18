@@ -42,12 +42,12 @@ pub async fn create_endpoint_handler(
 
     let endpoint = Endpoint::new(url, app.id, topics);
 
-    storage.endpoints.save(endpoint.clone());
+    storage.endpoints.save(endpoint.clone()).await;
 
     debug!(
         "Endpoint created: {:?}, count: {}",
         endpoint,
-        storage.endpoints.count()
+        storage.endpoints.count().await
     );
 
     let response = CreateEndpointResponse::from(endpoint);
@@ -85,7 +85,7 @@ async fn handle_status(
     let app = storage.applications.get(&app_id).await?;
 
     let endpoint_id = EndpointId::try_from(endpoint_id)?;
-    let mut endpoint = storage.endpoints.get(&endpoint_id)?;
+    let mut endpoint = storage.endpoints.get(&endpoint_id).await?;
 
     if !endpoint.app_id.eq(&app.id) {
         // todo get endpoint with one query - app_id + endpoint_id
@@ -97,7 +97,7 @@ async fn handle_status(
         StatusAction::Disable => endpoint.disable_manually(),
     }
 
-    storage.endpoints.save(endpoint);
+    storage.endpoints.save(endpoint).await;
 
     match action {
         StatusAction::Enable => debug!("Endpoint {} enabled", endpoint_id),

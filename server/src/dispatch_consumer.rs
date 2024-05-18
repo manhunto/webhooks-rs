@@ -1,4 +1,4 @@
-use std::cell::{RefCell, RefMut};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -12,7 +12,6 @@ use log::{debug, error, info};
 use crate::amqp::{Publisher, Serializer, SENT_MESSAGE_QUEUE};
 use crate::circuit_breaker::{CircuitBreaker, Error};
 use crate::cmd::AsyncMessage;
-use crate::configuration::domain::Endpoint;
 use crate::retry::RetryPolicyBuilder;
 use crate::sender::Sender;
 use crate::storage::Storage;
@@ -78,7 +77,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         }
 
         let endpoint_id = routed_msg.endpoint_id;
-        let endpoint = storage.endpoints.get(&endpoint_id);
+        let endpoint = storage.endpoints.get(&endpoint_id).await;
         if endpoint.is_err() {
             error!(
                 "Endpoint {} doesn't not exists and message {} cannot be dispatched",
@@ -97,7 +96,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         let sender = Sender::new(msg.payload.clone(), endpoint_borrowed.url);
         let key = endpoint_id.to_string();
 
-        let endpoint_borrowed = endpoint.borrow().to_owned();
+        let mut endpoint_borrowed = endpoint.borrow().to_owned();
         if endpoint_borrowed.is_active() && circuit_breaker.revive(&key).is_some() {
             debug!("Endpoint {} has been reopened", key);
         }
@@ -123,7 +122,12 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
                     storage.routed_messages.save(routed_msg);
                     storage.attempt_log.save(log);
 
-                    disable_endpoint(endpoint.borrow_mut(), &storage);
+                    let endpoint_id = endpoint_borrowed.id;
+
+                    endpoint_borrowed.disable_failing();
+                    storage.endpoints.save(endpoint_borrowed).await;
+
+                    debug!("Endpoint {} has been disabled", endpoint_id);
                 }
                 Error::Open(res) => {
                     let log = routed_msg.record_attempt(res, processing_time);
@@ -162,11 +166,4 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         delivery.ack(BasicAckOptions::default()).await.expect("ack");
     }
-}
-
-fn disable_endpoint(mut endpoint: RefMut<Endpoint>, storage: &Data<Storage>) {
-    endpoint.disable_failing();
-    storage.endpoints.save(endpoint.to_owned());
-
-    debug!("Endpoint {} has been disabled", endpoint.id);
 }

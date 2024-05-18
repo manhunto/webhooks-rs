@@ -4,6 +4,9 @@ use std::vec::IntoIter;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use regex::Regex;
+use sqlx::postgres::PgRow;
+use sqlx::types::JsonValue;
+use sqlx::{FromRow, Row};
 use url::Url;
 
 use crate::error::Error;
@@ -25,7 +28,7 @@ impl Application {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EndpointStatus {
     Initial,
     DisabledManually,
@@ -38,6 +41,34 @@ impl EndpointStatus {
         match self {
             Self::Initial | Self::EnabledManually => true,
             Self::DisabledManually | Self::DisabledFailing => false,
+        }
+    }
+}
+
+impl Display for EndpointStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            EndpointStatus::Initial => "initial",
+            EndpointStatus::DisabledManually => "disabled_manually",
+            EndpointStatus::DisabledFailing => "disabled_failing",
+            EndpointStatus::EnabledManually => "enabled_manually",
+        };
+
+        write!(f, "{}", str)
+    }
+}
+
+impl TryFrom<String> for EndpointStatus {
+    type Error = String;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            // fixme: why I need to trim it?
+            "initial" => Ok(EndpointStatus::Initial),
+            "disabled_manually" => Ok(EndpointStatus::DisabledManually),
+            "disabled_failing" => Ok(EndpointStatus::DisabledFailing),
+            "enabled_manually" => Ok(EndpointStatus::EnabledManually),
+            _ => Err(format!("Unexpected endpoint status: {}", value)),
         }
     }
 }
@@ -76,6 +107,31 @@ impl Endpoint {
 
     pub fn enable_manually(&mut self) {
         self.status = EndpointStatus::EnabledManually;
+    }
+}
+
+impl FromRow<'_, PgRow> for Endpoint {
+    fn from_row(row: &'_ PgRow) -> Result<Self, sqlx::Error> {
+        let id: String = row.try_get("id")?;
+        let app_id: String = row.try_get("app_id")?;
+        let url: String = row.try_get("url")?;
+        let status: String = row.try_get("status")?;
+        let topics: JsonValue = row.try_get("topics")?;
+
+        let topics: Vec<String> = topics
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t.as_str().unwrap().to_string())
+            .collect();
+
+        Ok(Endpoint {
+            id: EndpointId::try_from(format!("ep_{}", id)).unwrap(), // fixme: without adding prefix
+            app_id: ApplicationId::try_from(format!("app_{}", app_id)).unwrap(), // fixme: without adding prefix
+            url: Url::parse(&url).unwrap(),
+            topics: TopicsList::try_from(topics).unwrap(),
+            status: EndpointStatus::try_from(status.trim().to_string()).unwrap(),
+        })
     }
 }
 
@@ -128,6 +184,10 @@ impl TopicsList {
     pub fn contains(&self, topic: &Topic) -> bool {
         self.topics.contains(topic)
     }
+
+    pub fn as_strings(&self) -> Vec<String> {
+        self.topics.clone().into_iter().map(|t| t.name).collect()
+    }
 }
 
 impl TryFrom<Vec<String>> for TopicsList {
@@ -137,6 +197,14 @@ impl TryFrom<Vec<String>> for TopicsList {
         let topics: Vec<Topic> = value.iter().map(Topic::new).try_collect()?;
 
         Self::new(topics)
+    }
+}
+
+impl From<Vec<&'static str>> for TopicsList {
+    fn from(value: Vec<&'static str>) -> Self {
+        let vec: Vec<String> = value.into_iter().map(|s| s.to_string()).collect();
+
+        Self::try_from(vec).unwrap()
     }
 }
 
@@ -246,7 +314,8 @@ mod topics_list_tests {
 
     #[test]
     fn cannot_be_empty_from_vec_string() {
-        let sut = TopicsList::try_from(vec![]);
+        let vec: Vec<String> = Vec::new();
+        let sut = TopicsList::try_from(vec);
 
         assert_eq!(
             Err(InvalidArgument(

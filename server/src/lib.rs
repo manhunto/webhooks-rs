@@ -3,7 +3,7 @@ pub mod app;
 pub mod circuit_breaker;
 pub mod cmd;
 pub mod config;
-mod configuration;
+pub mod configuration;
 pub mod dispatch_consumer;
 mod error;
 mod events;

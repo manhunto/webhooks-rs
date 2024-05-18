@@ -33,7 +33,7 @@ pub async fn create_message_handler(
 
     debug!("Message created: {:?}", msg,);
 
-    let endpoints: Vec<Endpoint> = storage.endpoints.for_topic(&app_id, &msg.topic);
+    let endpoints: Vec<Endpoint> = storage.endpoints.for_topic(&app_id, &msg.topic).await;
     let endpoints_count = endpoints.len();
 
     let active_endpoints: Vec<Endpoint> =

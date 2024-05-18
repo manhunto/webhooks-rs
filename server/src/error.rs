@@ -10,7 +10,7 @@ use sqlx::Error as SqlxError;
 pub enum Error {
     InvalidArgument(String),
     EntityNotFound(String),
-    Sqlx,
+    Sqlx(String),
 }
 
 #[derive(Debug)]
@@ -55,7 +55,7 @@ impl From<Error> for ResponseError {
         match value {
             Error::EntityNotFound(msg) => ResponseError::NotFound(msg),
             Error::InvalidArgument(msg) => ResponseError::BadRequest(msg),
-            Error::Sqlx => ResponseError::InternalError,
+            Error::Sqlx(_) => ResponseError::InternalError,
         }
     }
 }
@@ -64,7 +64,7 @@ impl From<sqlx::Error> for Error {
     fn from(value: SqlxError) -> Self {
         match value {
             SqlxError::RowNotFound => Self::EntityNotFound("Entity not found".to_string()),
-            _ => Self::Sqlx,
+            _ => Self::Sqlx(value.to_string()),
         }
     }
 }

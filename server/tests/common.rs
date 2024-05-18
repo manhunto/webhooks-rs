@@ -2,6 +2,9 @@ use std::net::TcpListener;
 
 use dotenv::dotenv;
 use envconfig::Envconfig;
+use fake::{Fake, Faker};
+use reqwest::Client;
+use serde_json::{json, Value};
 use sqlx::{migrate, Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use svix_ksuid::{Ksuid, KsuidLike};
 
@@ -9,6 +12,7 @@ use server::app::run_without_rabbit_mq;
 use server::config::PostgresConfig;
 use server::logs::init_log;
 use server::storage::Storage;
+use server::types::ApplicationId;
 
 #[derive(Default)]
 struct TestServerBuilder {
@@ -89,11 +93,47 @@ impl TestServer {
     }
 
     pub fn url(&self, endpoint: &str) -> String {
-        format!("{}/v1/{}", self.server_url, endpoint)
+        format!("{}/{}", self.base_url(), endpoint)
+    }
+
+    pub fn base_url(&self) -> String {
+        format!("{}/v1", self.server_url)
     }
 
     #[allow(dead_code)]
     pub fn storage(&self) -> &Storage {
         &self.storage
+    }
+}
+
+#[allow(dead_code)]
+pub struct Given {
+    url: String,
+}
+
+#[allow(dead_code)]
+impl Given {
+    pub fn new(url: String) -> Given {
+        Self { url }
+    }
+
+    pub async fn app(&self) -> ApplicationId {
+        let name: String = Faker.fake::<String>();
+
+        let response = Client::new()
+            .post(&format!("{}/application", self.url))
+            .json(&json!({
+              "name": name
+            }))
+            .send()
+            .await
+            .expect("Failed to executed request");
+
+        let body = response.json::<Value>().await.unwrap();
+
+        let id = ApplicationId::try_from(body["id"].as_str().unwrap().to_string())
+            .expect("Invalid application id");
+
+        id
     }
 }
