@@ -35,6 +35,7 @@ an application that is high-performing, configurable and scalable.
 - [ ] SDK
 - [ ] CLI
 - [ ] Dockerized
+- [ ] Documentation
 
 ### Roadmap
 
