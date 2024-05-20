@@ -6,7 +6,7 @@ default-run = "server"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "4.5.1"
+actix-web = "4.6.0"
 chrono = "0.4.38"
 dotenv = "0.15.0"
 envconfig = "0.10.0"
