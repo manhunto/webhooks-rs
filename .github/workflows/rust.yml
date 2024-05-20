@@ -80,7 +80,7 @@ jobs:
       - name: Init db
         run: ./scripts/init-db.sh
       - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin
+        run: cargo install --version 0.29.2 cargo-tarpaulin
       - name: Generate code coverage
         run: cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
       - name: Upload coverage reports to Codecov
