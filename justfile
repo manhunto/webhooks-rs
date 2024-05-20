@@ -49,7 +49,7 @@ udeps:
     cargo +nightly udeps --all-targets
 
 coverage:
-    cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120
+    cargo +nightly tarpaulin --all-features --workspace --ignore-tests --timeout 120
 
 docker-up *OPTIONS:
     docker compose --env-file=.env up {{ OPTIONS }}

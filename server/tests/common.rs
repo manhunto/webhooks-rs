@@ -5,7 +5,7 @@ use envconfig::Envconfig;
 use fake::{Fake, Faker};
 use reqwest::Client;
 use serde_json::{json, Value};
-use sqlx::{migrate, Connection, Executor, PgConnection, PgPool, Pool, Postgres};
+use sqlx::{Connection, Executor, migrate, PgConnection, PgPool, Pool, Postgres};
 use svix_ksuid::{Ksuid, KsuidLike};
 
 use server::app::run_without_rabbit_mq;
@@ -28,6 +28,7 @@ impl TestServerBuilder {
     async fn run(&self) -> TestServer {
         dotenv().ok();
 
+        #[cfg(not(tarpaulin_include))]
         if self.logs {
             init_log();
         }
@@ -40,7 +41,7 @@ impl TestServerBuilder {
         let server = run_without_rabbit_mq(listener, pool.clone()).await.unwrap();
 
         #[allow(clippy::let_underscore_future)]
-        let _ = tokio::spawn(server);
+            let _ = tokio::spawn(server);
 
         TestServer {
             server_url: addr,
@@ -88,6 +89,7 @@ impl TestServer {
     }
 
     #[allow(dead_code)]
+    #[cfg(not(tarpaulin_include))]
     pub async fn run_with_logs() -> Self {
         TestServerBuilder::default().with_logs().run().await
     }
@@ -113,7 +115,7 @@ pub struct Given {
 
 #[allow(dead_code)]
 impl Given {
-    pub fn new(url: String) -> Given {
+    fn new(url: String) -> Given {
         Self { url }
     }
 
@@ -135,5 +137,11 @@ impl Given {
             .expect("Invalid application id");
 
         id
+    }
+}
+
+impl From<&TestServer> for Given {
+    fn from(value: &TestServer) -> Self {
+        Self::new(value.base_url())
     }
 }

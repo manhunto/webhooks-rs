@@ -13,7 +13,7 @@ mod common;
 async fn endpoint_is_created() {
     // Arrange
     let server = TestServer::run().await;
-    let app_id = Given::new(server.base_url()).app().await;
+    let app_id = Given::from(&server).app().await;
 
     // Act
     let response = Client::new()
