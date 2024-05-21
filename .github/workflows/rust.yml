@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/manhunto/webhooks-rs-dev:test
+      image: ghcr.io/manhunto/webhooks-rs-dev:latest
       credentials:
         username: manhunto
         password: ${{ secrets.GHCR_TOKEN }}
@@ -40,7 +40,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/manhunto/webhooks-rs-dev:test
+      image: ghcr.io/manhunto/webhooks-rs-dev:latest
       credentials:
         username: manhunto
         password: ${{ secrets.GHCR_TOKEN }}
@@ -64,7 +64,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/manhunto/webhooks-rs-dev:test
+      image: ghcr.io/manhunto/webhooks-rs-dev:latest
       credentials:
         username: manhunto
         password: ${{ secrets.GHCR_TOKEN }}
@@ -104,7 +104,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/manhunto/webhooks-rs-dev:test
+      image: ghcr.io/manhunto/webhooks-rs-dev:latest
       credentials:
         username: manhunto
         password: ${{ secrets.GHCR_TOKEN }}
@@ -134,7 +134,7 @@ jobs:
   udeps:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/manhunto/webhooks-rs-dev:test
+      image: ghcr.io/manhunto/webhooks-rs-dev:latest
       credentials:
         username: manhunto
         password: ${{ secrets.GHCR_TOKEN }}
