@@ -16,7 +16,7 @@ RUN apk add --no-cache \
     libressl-dev \
     bash \
     ca-certificates \
-    gpg
+    gnupg
 
 RUN rm -rf /var/cache/apk/*
 
