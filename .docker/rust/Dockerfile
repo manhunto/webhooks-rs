@@ -7,7 +7,8 @@ RUN apk update && apk upgrade --no-cache
 RUN apk add --no-cache  \
     alpine-sdk \
     curl \
-    libressl-dev
+    libressl-dev \
+    bash
 
 # Get Rust
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=1.78.0
