@@ -8,6 +8,7 @@ RUN apk add --no-cache \
 RUN cargo install --version=0.7.4 sqlx-cli --no-default-features --features rustls,postgres
 RUN cargo install --version=0.1.48 cargo-udeps
 RUN cargo install --version=0.30.0 cargo-tarpaulin
+RUN rustup component add clippy
 
 FROM rust:1.78-alpine3.19
 
@@ -19,3 +20,4 @@ RUN apk add --no-cache \
 COPY --from=builder /usr/local/cargo/bin/cargo-tarpaulin /usr/local/cargo/bin/cargo-tarpaulin
 COPY --from=builder /usr/local/cargo/bin/cargo-udeps /usr/local/cargo/bin/cargo-udeps
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/cargo/bin/sqlx
+COPY --from=builder /usr/local/cargo/bin/cargo-clippy /usr/local/cargo/bin/cargo-clippy
