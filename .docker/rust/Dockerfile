@@ -24,3 +24,7 @@ COPY --from=builder /usr/local/cargo/bin/cargo-udeps /usr/local/cargo/bin/cargo-
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/cargo/bin/sqlx
 
 RUN rustup component add clippy
+
+COPY .docker/cacert.pem /usr/local/share/ca-certificates/
+
+RUN update-ca-certificates
