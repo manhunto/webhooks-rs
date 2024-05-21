@@ -14,7 +14,9 @@ env:
 
 jobs:
   build:
-    runs-on: ghcr.io/manhunto/webhooks-rs-dev:test
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/manhunto/webhooks-rs-dev:test
     services:
       postgres:
         image: postgres:16.3-alpine3.19
