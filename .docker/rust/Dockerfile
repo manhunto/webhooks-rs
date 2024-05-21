@@ -14,7 +14,10 @@ FROM rust:1.78-alpine3.19
 RUN apk add --no-cache \
     alpine-sdk \
     libressl-dev \
-    bash
+    bash \
+    ca-certificates
+
+RUN rm -rf /var/cache/apk/*
 
 COPY --from=builder /usr/local/cargo/bin/cargo-tarpaulin /usr/local/cargo/bin/cargo-tarpaulin
 COPY --from=builder /usr/local/cargo/bin/cargo-udeps /usr/local/cargo/bin/cargo-udeps
