@@ -20,7 +20,7 @@ default:
     @just --list
 
 build *OPTIONS:
-    cargo build --all-targets {{ OPTIONS }}
+    cargo build --all-targets --workspace {{ OPTIONS }}
 
 format:
     cargo fmt --all
