@@ -2,3 +2,4 @@
 /.idea
 .env
 /.sqlx
+build_rs_cov.profraw
