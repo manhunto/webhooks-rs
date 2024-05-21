@@ -83,6 +83,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Init db
         run: ./scripts/init-db.sh
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
       - name: Generate code coverage
         run: cargo +nightly tarpaulin --verbose --all-features --workspace --ignore-tests --timeout 120 --out xml
       - name: Upload coverage reports to Codecov
@@ -148,5 +153,10 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Init db
         run: ./scripts/init-db.sh
+      - name: Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
       - name: Run cargo-udeps
         run: cargo +nightly udeps --all-targets

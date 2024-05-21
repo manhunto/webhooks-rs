@@ -17,8 +17,6 @@ RUN apk add --no-cache \
     libressl-dev \
     bash
 
-RUN rustup install nightly
-
 COPY --from=builder /usr/local/cargo/bin/cargo-tarpaulin /usr/local/cargo/bin/cargo-tarpaulin
 COPY --from=builder /usr/local/cargo/bin/cargo-udeps /usr/local/cargo/bin/cargo-udeps
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/cargo/bin/sqlx
