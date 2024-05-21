@@ -149,4 +149,4 @@ jobs:
       - name: Init db
         run: ./scripts/init-db.sh
       - name: Run cargo-udeps
-        run: cargo +nightly udeps --all-target
+        run: cargo +nightly udeps --all-targets
