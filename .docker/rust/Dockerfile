@@ -9,7 +9,12 @@ RUN cargo install --version=0.7.4 sqlx-cli --no-default-features --features rust
 RUN cargo install --version=0.1.48 cargo-udeps
 RUN cargo install --version=0.30.0 cargo-tarpaulin
 
-FROM rust:1.78-slim
+FROM rust:1.78-alpine3.19
+
+RUN apk add --no-cache \
+    alpine-sdk \
+    libressl-dev \
+    bash
 
 COPY --from=builder /usr/local/cargo/bin/cargo-tarpaulin /usr/local/cargo/bin/cargo-tarpaulin
 COPY --from=builder /usr/local/cargo/bin/cargo-udeps /usr/local/cargo/bin/cargo-udeps
