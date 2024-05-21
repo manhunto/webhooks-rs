@@ -15,16 +15,10 @@ RUN apk add --no-cache \
     alpine-sdk \
     libressl-dev \
     bash \
-    ca-certificates
-
-RUN rm -rf /var/cache/apk/*
+    && rm -rf /var/cache/apk/*
 
 COPY --from=builder /usr/local/cargo/bin/cargo-tarpaulin /usr/local/cargo/bin/cargo-tarpaulin
 COPY --from=builder /usr/local/cargo/bin/cargo-udeps /usr/local/cargo/bin/cargo-udeps
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/cargo/bin/sqlx
 
 RUN rustup component add clippy
-
-COPY .docker/cacert.pem /usr/local/share/ca-certificates/
-
-RUN update-ca-certificates
