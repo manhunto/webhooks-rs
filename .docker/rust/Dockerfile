@@ -20,5 +20,6 @@ RUN cargo install --version=0.7.4 sqlx-cli --no-default-features --features rust
 RUN cargo install --version=0.1.48 cargo-udeps
 RUN cargo install --version=0.30.0 cargo-tarpaulin
 
-RUN rustup default nightly
+RUN rustup install nightly
+RUN rustup install stable
 RUN rustup default stable
