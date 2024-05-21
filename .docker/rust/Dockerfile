@@ -1,25 +1,16 @@
-FROM alpine:3.19.1
-LABEL authors="kubasladek"
+FROM rust:1.78-alpine3.19 as builder
 
-RUN apk update && apk upgrade --no-cache
-
-# Get Ubuntu packages
-RUN apk add --no-cache  \
+RUN apk add --no-cache \
     alpine-sdk \
-    curl \
     libressl-dev \
     bash
-
-# Get Rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=1.78.0
-
-# Add .cargo/bin to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN cargo install --version=0.7.4 sqlx-cli --no-default-features --features rustls,postgres
 RUN cargo install --version=0.1.48 cargo-udeps
 RUN cargo install --version=0.30.0 cargo-tarpaulin
 
-RUN rustup install nightly
-RUN rustup install stable
-RUN rustup default stable
+FROM rust:1.78-slim
+
+COPY --from=builder /usr/local/cargo/bin/cargo-tarpaulin /usr/local/cargo/bin/cargo-tarpaulin
+COPY --from=builder /usr/local/cargo/bin/cargo-udeps /usr/local/cargo/bin/cargo-udeps
+COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/cargo/bin/sqlx
