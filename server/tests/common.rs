@@ -5,7 +5,7 @@ use envconfig::Envconfig;
 use fake::{Fake, Faker};
 use reqwest::Client;
 use serde_json::{json, Value};
-use sqlx::{Connection, Executor, migrate, PgConnection, PgPool, Pool, Postgres};
+use sqlx::{migrate, Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use svix_ksuid::{Ksuid, KsuidLike};
 
 use server::app::run_without_rabbit_mq;
@@ -40,7 +40,7 @@ impl TestServerBuilder {
         let server = run_without_rabbit_mq(listener, pool.clone()).await.unwrap();
 
         #[allow(clippy::let_underscore_future)]
-            let _ = tokio::spawn(server);
+        let _ = tokio::spawn(server);
 
         TestServer {
             server_url: addr,
