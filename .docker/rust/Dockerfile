@@ -15,7 +15,8 @@ RUN apk add --no-cache \
     alpine-sdk \
     libressl-dev \
     bash \
-    ca-certificates
+    ca-certificates \
+    gpg
 
 RUN rm -rf /var/cache/apk/*
 
