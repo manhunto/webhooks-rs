@@ -19,7 +19,7 @@ jobs:
       image: ghcr.io/manhunto/webhooks-rs-dev:test
       credentials:
         username: manhunto
-        password: ${{ secrets.GITHUB_REGISTRY_TOKEN }}
+        password: ${{ secrets.GHCR_TOKEN }}
     services:
       postgres:
         image: postgres:16.3-alpine3.19
