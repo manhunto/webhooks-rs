@@ -28,7 +28,7 @@ impl TestServerBuilder {
     async fn run(&self) -> TestServer {
         dotenv().ok();
 
-        if cfg!(not(tarpaulin_include)) && self.logs {
+        if self.logs {
             init_log();
         }
 
