@@ -6,8 +6,9 @@ source .env
 
 echo "Run migrations";
 
-until cargo sqlx migrate run --source=server/migrations;
+RETRIES=30
+until cargo sqlx migrate run --source=server/migrations || [ $RETRIES -eq 0 ];
 do
-  echo "Waiting for postgres...";
+  echo "Waiting for postgres server, $((RETRIES--)) remaining attempts..."
   sleep 1;
 done
