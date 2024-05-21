@@ -64,6 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/manhunto/webhooks-rs-dev:latest
+      options: --security-opt seccomp=unconfined
       credentials:
         username: manhunto
         password: ${{ secrets.GHCR_TOKEN }}
