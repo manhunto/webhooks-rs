@@ -9,8 +9,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-Dwarnings"
-  SQLX_VERSION: 0.7.4
-  SQLX_FEATURES: "rustls,postgres"
 
 jobs:
   build:
