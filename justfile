@@ -1,5 +1,6 @@
 rust-dev-name := "ghcr.io/manhunto/webhooks-rs-dev"
 rust-dev-version := "latest"
+rust-dev-image := rust-dev-name + ":" + rust-dev-version
 
 alias b := build
 alias f := format
@@ -71,7 +72,7 @@ init:
     ./scripts/init-db.sh
 
 rust-dev-build:
-    docker build --platform linux/amd64 . -t {{ rust-dev-name }}:{{ rust-dev-version }} -f .docker/rust/Dockerfile
+    docker build --platform linux/amd64 . -t {{ rust-dev-image }} -f .docker/rust/Dockerfile
 
 rust-dev-push:
-    docker push ghcr.io/manhunto/webhooks-rs-dev:latest
+    docker push {{ rust-dev-image }}
