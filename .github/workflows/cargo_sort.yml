@@ -13,11 +13,14 @@ on:
 jobs:
   cargo_sort:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/manhunto/webhooks-rs-dev:latest
+      credentials:
+        username: manhunto
+        password: ${{ secrets.GHCR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
         uses: Swatinem/rust-cache@v2
-      - name: Install cargo-sort
-        run: cargo install cargo-sort
       - name: Run cargo sort
         run: cargo sort --workspace --check
