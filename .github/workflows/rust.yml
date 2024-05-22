@@ -25,9 +25,6 @@ jobs:
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
-          POSTGRES_DB: webhooks
-        ports:
-          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
@@ -78,8 +75,11 @@ jobs:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
           POSTGRES_DB: webhooks
-        ports:
-          - 5432:5432
+      rabbitmq:
+        image: ghcr.io/manhunto/webhooks-rs-rabbitmq:latest
+        credentials:
+          username: manhunto
+          password: ${{ secrets.GHCR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
@@ -118,8 +118,6 @@ jobs:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
           POSTGRES_DB: webhooks
-        ports:
-          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
@@ -148,8 +146,6 @@ jobs:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
           POSTGRES_DB: webhooks
-        ports:
-          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup

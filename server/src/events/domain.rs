@@ -8,7 +8,7 @@ use serde_json::Value;
 use crate::configuration::domain::{Endpoint, Topic};
 use crate::sender::{SentResult, Status};
 use crate::time::Clock;
-use crate::types::{ApplicationId, EndpointId, MessageId, RoutedMessageId};
+use crate::types::{ApplicationId, EndpointId, EventId, RoutedMessageId};
 
 #[derive(Debug, Clone)]
 pub struct Payload {
@@ -41,18 +41,18 @@ impl Display for Payload {
 }
 
 #[derive(Debug, Clone)]
-pub struct Message {
-    pub id: MessageId,
+pub struct Event {
+    pub id: EventId,
     pub app_id: ApplicationId,
     pub payload: Payload,
     pub topic: Topic,
     pub created_at: DateTime<Utc>,
 }
 
-impl Message {
+impl Event {
     pub fn new(app_id: ApplicationId, payload: Payload, topic: Topic, clock: &Clock) -> Self {
         Self {
-            id: MessageId::new(),
+            id: EventId::new(),
             app_id,
             payload,
             topic,
@@ -79,24 +79,24 @@ impl Message {
 #[derive(Debug, Clone)]
 pub struct RoutedMessage {
     pub id: RoutedMessageId,
-    pub msg_id: MessageId,
+    pub event_id: EventId,
     pub endpoint_id: EndpointId,
     attempts: AttemptCollection,
 }
 
-impl From<(Message, Endpoint)> for RoutedMessage {
-    fn from(value: (Message, Endpoint)) -> Self {
-        let (msg, endpoint) = value;
+impl From<(Event, Endpoint)> for RoutedMessage {
+    fn from(value: (Event, Endpoint)) -> Self {
+        let (event, endpoint) = value;
 
-        Self::new(msg.id, endpoint.id)
+        Self::new(event.id, endpoint.id)
     }
 }
 
 impl RoutedMessage {
-    fn new(msg_id: MessageId, endpoint_id: EndpointId) -> Self {
+    fn new(event_id: EventId, endpoint_id: EndpointId) -> Self {
         Self {
             id: RoutedMessageId::new(),
-            msg_id,
+            event_id,
             endpoint_id,
             attempts: AttemptCollection::new(),
         }
@@ -212,7 +212,7 @@ mod message_test {
     use test_case::test_case;
 
     use crate::configuration::domain::Topic;
-    use crate::events::domain::{Message, Payload};
+    use crate::events::domain::{Event, Payload};
     use crate::tests::dt;
     use crate::time::Clock::Fixed;
     use crate::types::ApplicationId;
@@ -247,10 +247,10 @@ mod message_test {
     struct MessageObjectMother;
 
     impl MessageObjectMother {
-        fn with_created_at_str(created_at: DateTime<Utc>) -> Message {
+        fn with_created_at_str(created_at: DateTime<Utc>) -> Event {
             let clock = Fixed(created_at);
 
-            Message::new(
+            Event::new(
                 ApplicationId::new(),
                 Payload::from(json!({"foo": "bar"})),
                 Topic::new("contact.created").unwrap(),

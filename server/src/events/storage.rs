@@ -2,41 +2,39 @@ use std::sync::Mutex;
 
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
-use crate::events::domain::{AttemptLog, Message, RoutedMessage};
-use crate::types::{MessageId, RoutedMessageId};
+use crate::events::domain::{AttemptLog, Event, RoutedMessage};
+use crate::types::{EventId, RoutedMessageId};
 
 pub trait MessageStorage {
-    fn save(&self, app: Message);
+    fn save(&self, app: Event);
 
-    fn get(&self, message_id: MessageId) -> Result<Message, Error>;
+    fn get(&self, event_id: EventId) -> Result<Event, Error>;
 }
 
 pub struct InMemoryMessageStorage {
-    messages: Mutex<Vec<Message>>,
+    events: Mutex<Vec<Event>>,
 }
 
 impl InMemoryMessageStorage {
     pub fn new() -> Self {
         Self {
-            messages: Mutex::new(vec![]),
+            events: Mutex::new(vec![]),
         }
     }
 }
 
 impl MessageStorage for InMemoryMessageStorage {
-    fn save(&self, app: Message) {
-        let mut messages = self.messages.lock().unwrap();
-
-        messages.push(app);
+    fn save(&self, app: Event) {
+        self.events.lock().unwrap().push(app);
     }
 
-    fn get(&self, message_id: MessageId) -> Result<Message, Error> {
-        let messages = self.messages.lock().unwrap();
-
-        messages
+    fn get(&self, event_id: EventId) -> Result<Event, Error> {
+        self.events
+            .lock()
+            .unwrap()
             .clone()
             .into_iter()
-            .find(|msg| msg.id.eq(&message_id))
+            .find(|event| event.id.eq(&event_id))
             .ok_or_else(|| EntityNotFound("Message not found".to_string()))
     }
 }

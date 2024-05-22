@@ -4,7 +4,7 @@ use crate::configuration::handlers::{
     create_application_handler, create_endpoint_handler, disable_endpoint_handler,
     enable_endpoint_handler,
 };
-use crate::events::handlers::create_message_handler;
+use crate::events::handlers::create_event_handler;
 use crate::handlers::health_check::health_check;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -25,8 +25,8 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 web::post().to(enable_endpoint_handler),
             )
             .route(
-                "application/{app_id}/message",
-                web::post().to(create_message_handler),
+                "application/{app_id}/event",
+                web::post().to(create_event_handler),
             ),
     );
 }

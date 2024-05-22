@@ -32,8 +32,8 @@ Content-Type: application/json
     client.global.set("endpoint_id", response.body.id);
 %}
 
-### Create message
-POST {{url}}/v1/application/{{app_id}}/message
+### Create event
+POST {{url}}/v1/application/{{app_id}}/event
 Content-Type: application/json
 
 {

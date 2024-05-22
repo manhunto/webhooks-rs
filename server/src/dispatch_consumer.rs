@@ -64,11 +64,11 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
 
         let mut routed_msg = routed_msg.unwrap();
 
-        let msg = storage.messages.get(routed_msg.msg_id);
-        if msg.is_err() {
+        let event = storage.events.get(routed_msg.event_id);
+        if event.is_err() {
             error!(
                 "Message {} doesn't exist and cannot be dispatched",
-                routed_msg.msg_id
+                routed_msg.event_id
             );
 
             delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -81,7 +81,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         if endpoint.is_err() {
             error!(
                 "Endpoint {} doesn't not exists and message {} cannot be dispatched",
-                endpoint_id, routed_msg.msg_id
+                endpoint_id, routed_msg.event_id
             );
 
             delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -89,11 +89,11 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             continue;
         }
 
-        let msg = msg.unwrap();
+        let event = event.unwrap();
         let endpoint = Rc::new(RefCell::new(endpoint.unwrap()));
         let endpoint_borrowed = endpoint.borrow().to_owned();
 
-        let sender = Sender::new(msg.payload.clone(), endpoint_borrowed.url);
+        let sender = Sender::new(event.payload.clone(), endpoint_borrowed.url);
         let key = endpoint_id.to_string();
 
         let mut endpoint_borrowed = endpoint.borrow().to_owned();
@@ -101,11 +101,11 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
             debug!("Endpoint {} has been reopened", key);
         }
 
-        let processing_time = msg.calculate_processing_time(&clock);
+        let processing_time = event.calculate_processing_time(&clock);
 
         debug!(
             "Message {} for endpoint {} is being prepared to send. Processing time: {:?}",
-            msg.id.to_string(),
+            event.id.to_string(),
             endpoint_borrowed.id.to_string(),
             processing_time,
         );
@@ -156,7 +156,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
                 Error::Rejected => {
                     debug!(
                         "Endpoint {} is closed. Message {} rejected.",
-                        key, routed_msg.msg_id
+                        key, routed_msg.event_id
                     );
 
                     // todo do something with message? add to some "not delivered" bucket?

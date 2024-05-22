@@ -6,7 +6,7 @@ use crate::common::{Given, TestServer};
 mod common;
 
 #[tokio::test]
-async fn message_is_created_and_dispatched() {
+async fn event_is_created_and_dispatched() {
     // Arrange
     let server = TestServer::run().await;
     let topic = "contact.created";
@@ -16,7 +16,7 @@ async fn message_is_created_and_dispatched() {
 
     // Act
     let response = Client::new()
-        .post(&server.url(&format!("application/{}/message", app_id)))
+        .post(&server.url(&format!("application/{}/event", app_id)))
         .json(&json!({
           "topic": topic,
           "payload": {

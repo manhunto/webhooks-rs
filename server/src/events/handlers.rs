@@ -6,51 +6,51 @@ use crate::amqp::Publisher;
 use crate::cmd::{AsyncMessage, SentMessage};
 use crate::configuration::domain::{Endpoint, Topic};
 use crate::error::ResponseError;
-use crate::events::domain::{Message, Payload, RoutedMessage};
-use crate::events::models::CreateMessageRequest;
+use crate::events::domain::{Event, Payload, RoutedMessage};
+use crate::events::models::CreateEventRequest;
 use crate::storage::Storage;
 use crate::time::Clock;
 use crate::types::ApplicationId;
 
-pub async fn create_message_handler(
+pub async fn create_event_handler(
     storage: Data<Storage>,
     dispatcher: Data<Publisher>,
-    request: Json<CreateMessageRequest>,
+    request: Json<CreateEventRequest>,
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
     let app_id = ApplicationId::try_from(path.into_inner())?;
     let app = storage.applications.get(&app_id).await?;
     let topic = Topic::new(request.topic.clone())?;
     let clock = Clock::chrono();
-    let msg = Message::new(
+    let event = Event::new(
         app.id,
         Payload::from(request.payload.clone()),
         topic.clone(),
         &clock,
     );
 
-    storage.messages.save(msg.clone());
+    storage.events.save(event.clone());
 
-    debug!("Message created: {:?}", msg,);
+    debug!("Message created: {:?}", event,);
 
-    let endpoints: Vec<Endpoint> = storage.endpoints.for_topic(&app_id, &msg.topic).await;
+    let endpoints: Vec<Endpoint> = storage.endpoints.for_topic(&app_id, &event.topic).await;
     let endpoints_count = endpoints.len();
 
     let active_endpoints: Vec<Endpoint> =
         endpoints.into_iter().filter(|en| en.is_active()).collect();
 
     debug!(
-        "in app {} - {} ({}) endpoints found for message {}",
-        msg.app_id,
+        "in app {} - {} ({}) endpoints found for event {}",
+        event.app_id,
         active_endpoints.len(),
         endpoints_count,
-        msg.id
+        event.id
     );
 
     for endpoint in active_endpoints {
-        debug!("{} sending to {}", msg.id, endpoint.url);
+        debug!("{} sending to {}", event.id, endpoint.url);
 
-        let routed_msg = RoutedMessage::from((msg.clone(), endpoint.clone()));
+        let routed_msg = RoutedMessage::from((event.clone(), endpoint.clone()));
 
         storage.routed_messages.save(routed_msg.clone());
 
@@ -59,7 +59,7 @@ pub async fn create_message_handler(
 
         dispatcher.publish(message).await;
 
-        debug!("Message published on the queue")
+        debug!("Message {} published on the queue", routed_msg.id)
     }
 
     Ok(HttpResponse::Created())
