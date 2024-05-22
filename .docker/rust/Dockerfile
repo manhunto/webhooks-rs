@@ -12,8 +12,9 @@ RUN cargo install --version=1.0.9 cargo-sort
 
 FROM rust:1.78-alpine3.19
 
-RUN apk update && \
-    apk add --no-cache \
+RUN apk update \
+    && apk upgrade --available \
+    && apk add --no-cache \
     alpine-sdk \
     libressl-dev \
     bash \
@@ -29,6 +30,6 @@ COPY --from=builder /usr/local/cargo/bin/cargo-sort /usr/local/cargo/bin/cargo-s
 
 RUN rustup component add clippy
 
-COPY .docker/cacert.pem /usr/local/share/ca-certificates/my.crt
+ADD .docker/cacert.pem /usr/local/share/ca-certificates/my.crt
 
 RUN update-ca-certificates
