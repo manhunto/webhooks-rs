@@ -8,11 +8,11 @@ use serde_json::{json, Value};
 use sqlx::{migrate, Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use svix_ksuid::{Ksuid, KsuidLike};
 
-use server::app::run_without_rabbit_mq;
+use server::app::run;
 use server::config::PostgresConfig;
 use server::logs::init_log;
 use server::storage::Storage;
-use server::types::ApplicationId;
+use server::types::{ApplicationId, EndpointId};
 
 #[derive(Default)]
 struct TestServerBuilder {
@@ -37,7 +37,7 @@ impl TestServerBuilder {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = format!("http://{}", listener.local_addr().unwrap());
 
-        let server = run_without_rabbit_mq(listener, pool.clone()).await.unwrap();
+        let server = run(listener, pool.clone()).await.unwrap();
 
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(server);
@@ -135,6 +135,31 @@ impl Given {
             .expect("Invalid application id");
 
         id
+    }
+
+    pub async fn endpoint_with_app(
+        &self,
+        url: &str,
+        topics: Vec<&str>,
+    ) -> (ApplicationId, EndpointId) {
+        let app_id = self.app().await;
+
+        let response = Client::new()
+            .post(&format!("{}/application/{}/endpoint", self.url, app_id))
+            .json(&json!({
+              "url": url,
+              "topics": topics
+            }))
+            .send()
+            .await
+            .expect("Failed to executed request");
+
+        let body = response.json::<Value>().await.unwrap();
+
+        let endpoint_id = EndpointId::try_from(body["id"].as_str().unwrap().to_string())
+            .expect("Invalid endpoint id");
+
+        (app_id, endpoint_id)
     }
 }
 

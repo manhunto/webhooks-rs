@@ -2,6 +2,10 @@ rust-dev-name := "ghcr.io/manhunto/webhooks-rs-dev"
 rust-dev-version := "latest"
 rust-dev-image := rust-dev-name + ":" + rust-dev-version
 
+rabbitmq-dev-name := "ghcr.io/manhunto/webhooks-rs-rabbitmq"
+rabbitmq-dev-version := "latest"
+rabbitmq-dev-image := rabbitmq-dev-name + ":" + rabbitmq-dev-version
+
 alias b := build
 alias f := format
 alias fmt := format
@@ -76,3 +80,9 @@ rust-dev-build:
 
 rust-dev-push:
     docker push {{ rust-dev-image }}
+
+rabbitmq-dev-build:
+    docker build --platform linux/amd64 . -t {{ rabbitmq-dev-image }} -f .docker/rabbitmq/Dockerfile
+
+rabbitmq-dev-push:
+    docker push {{ rabbitmq-dev-image }}
