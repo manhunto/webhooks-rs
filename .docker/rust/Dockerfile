@@ -31,7 +31,3 @@ RUN rustup component add clippy
 COPY .docker/cacert.pem /usr/local/share/ca-certificates/cacert.crt
 
 RUN update-ca-certificates
-
-RUN curl -Os https://cli.codecov.io/latest/linux/codecov \
-    && chmod +x codecov \
-    && mv codecov /usr/local/bin
