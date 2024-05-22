@@ -52,6 +52,9 @@ jobs:
           POSTGRES_DB: webhooks
       rabbitmq:
         image: ghcr.io/manhunto/webhooks-rs-rabbitmq:latest
+        credentials:
+          username: manhunto
+          password: ${{ secrets.GHCR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
