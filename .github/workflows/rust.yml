@@ -51,7 +51,7 @@ jobs:
           POSTGRES_PASSWORD: webhooks
           POSTGRES_DB: webhooks
       rabbitmq:
-        image: ghcr.io/manhunto/webhooks-rs-dev:latest
+        image: ghcr.io/manhunto/webhooks-rs-rabbitmq:latest
     steps:
       - uses: actions/checkout@v4
       - name: Cache setup
