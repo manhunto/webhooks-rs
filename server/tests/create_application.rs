@@ -10,7 +10,7 @@ mod common;
 #[tokio::test]
 async fn application_is_created() {
     // Arrange
-    let server = TestEnvironment::new().await.server().run().await;
+    let server = TestEnvironment::new().await.server().await;
 
     // Act
     let response = Client::new()

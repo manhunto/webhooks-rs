@@ -9,9 +9,9 @@ mod common;
 async fn event_is_created_and_dispatched() {
     // Arrange
     let environment = TestEnvironment::new().await;
-    let server = environment.server().run().await;
+    let server = environment.server().await;
 
-    environment.dispatcher().run().await;
+    environment.dispatcher().await;
 
     let topic = "contact.created";
     let (app_id, _) = Given::from(&server)

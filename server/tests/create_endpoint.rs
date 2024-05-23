@@ -12,7 +12,7 @@ mod common;
 #[tokio::test]
 async fn endpoint_is_created() {
     // Arrange
-    let server = TestEnvironment::new().await.server().run().await;
+    let server = TestEnvironment::new().await.server().await;
     let app_id = Given::from(&server).app().await;
 
     // Act

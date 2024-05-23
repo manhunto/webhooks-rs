@@ -7,7 +7,7 @@ mod common;
 #[tokio::test]
 async fn health_check_works() {
     // Arrange
-    let server = TestEnvironment::new().await.server().run().await;
+    let server = TestEnvironment::new().await.server().await;
 
     // Act
     let response = Client::new()

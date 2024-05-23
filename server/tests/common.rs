@@ -5,7 +5,7 @@ use envconfig::Envconfig;
 use fake::{Fake, Faker};
 use reqwest::Client;
 use serde_json::{json, Value};
-use sqlx::{migrate, Connection, Executor, PgConnection, PgPool, Pool, Postgres};
+use sqlx::{migrate, Connection, Executor, PgConnection, PgPool};
 use svix_ksuid::{Ksuid, KsuidLike};
 
 use server::app::{run_dispatcher, run_server};
@@ -34,7 +34,7 @@ impl TestEnvironmentBuilder {
         }
     }
 
-    async fn prepare_db() -> Pool<Postgres> {
+    async fn prepare_db() -> PgPool {
         // Create db
         let pg_config = PostgresConfig::init_from_env().unwrap();
         let mut connection = PgConnection::connect(&pg_config.connection_string_without_db())
@@ -64,7 +64,7 @@ impl TestEnvironmentBuilder {
 }
 
 pub struct TestEnvironment {
-    pool: Pool<Postgres>,
+    pool: PgPool,
 }
 
 impl TestEnvironment {
@@ -77,27 +77,26 @@ impl TestEnvironment {
         TestEnvironmentBuilder::build_with_logs().await
     }
 
-    pub fn server(&self) -> TestServerBuilder {
-        TestServerBuilder::new(self.pool.clone())
+    pub async fn server(&self) -> TestServer {
+        TestServerBuilder::new(self.pool.clone()).run().await
     }
 
-    // todo: why it is detected as unused?
     #[allow(dead_code)]
-    pub fn dispatcher(&self) -> TestDispatcherBuilder {
-        TestDispatcherBuilder::new(self.pool.clone())
+    pub async fn dispatcher(&self) {
+        TestDispatcherBuilder::new(self.pool.clone()).run().await
     }
 }
 
-pub struct TestServerBuilder {
-    pool: Pool<Postgres>,
+struct TestServerBuilder {
+    pool: PgPool,
 }
 
 impl TestServerBuilder {
-    fn new(pool: Pool<Postgres>) -> Self {
+    fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn run(&self) -> TestServer {
+    async fn run(&self) -> TestServer {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = format!("http://{}", listener.local_addr().unwrap());
 
@@ -133,20 +132,16 @@ impl TestServer {
     }
 }
 
-// todo: why it is detected as unused?
-#[allow(dead_code)]
-pub struct TestDispatcherBuilder {
-    pool: Pool<Postgres>,
+struct TestDispatcherBuilder {
+    pool: PgPool,
 }
 
 impl TestDispatcherBuilder {
-    fn new(pool: Pool<Postgres>) -> Self {
+    fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
-    // todo: why it is detected as unused?
-    #[allow(dead_code)]
-    pub async fn run(&self) {
+    async fn run(&self) {
         let pool = self.pool.clone();
 
         #[allow(clippy::let_underscore_future)]
