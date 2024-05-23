@@ -31,6 +31,5 @@ COPY --from=builder /usr/local/cargo/bin/cargo-sort /usr/local/cargo/bin/cargo-s
 RUN rustup component add clippy
 
 ADD .docker/cacert.pem /usr/local/share/ca-certificates/my.crt
-ADD .docker/cacert.pem /etc/ssl/cert.pem
 
 RUN update-ca-certificates
