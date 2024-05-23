@@ -4,7 +4,7 @@ use dotenv::dotenv;
 use envconfig::Envconfig;
 use sqlx::PgPool;
 
-use server::app::run;
+use server::app::run_server;
 use server::config::{PostgresConfig, ServerConfig};
 use server::logs::init_log;
 
@@ -20,5 +20,5 @@ async fn main() -> Result<(), std::io::Error> {
     let con_string = PostgresConfig::init_from_env().unwrap().connection_string();
     let pool = PgPool::connect(&con_string).await.unwrap();
 
-    run(listener, pool).await?.await
+    run_server(listener, pool).await?.await
 }

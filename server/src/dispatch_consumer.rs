@@ -1,8 +1,5 @@
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::time::Duration;
 
-use actix_web::web::Data;
 use futures_lite::StreamExt;
 use lapin::options::{BasicAckOptions, BasicConsumeOptions};
 use lapin::types::FieldTable;
@@ -17,7 +14,7 @@ use crate::sender::Sender;
 use crate::storage::Storage;
 use crate::time::Clock;
 
-pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage>) {
+pub async fn consume(channel: Channel, consumer_tag: &str, storage: Storage) {
     let retry_policy = RetryPolicyBuilder::new()
         .max_retries(5)
         .exponential(2, Duration::from_secs(2))
@@ -90,14 +87,12 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         }
 
         let event = event.unwrap();
-        let endpoint = Rc::new(RefCell::new(endpoint.unwrap()));
-        let endpoint_borrowed = endpoint.borrow().to_owned();
+        let endpoint = endpoint.unwrap();
 
-        let sender = Sender::new(event.payload.clone(), endpoint_borrowed.url);
+        let sender = Sender::new(event.payload.clone(), endpoint.url.clone());
         let key = endpoint_id.to_string();
 
-        let mut endpoint_borrowed = endpoint.borrow().to_owned();
-        if endpoint_borrowed.is_active() && circuit_breaker.revive(&key).is_some() {
+        if endpoint.is_active() && circuit_breaker.revive(&key).is_some() {
             debug!("Endpoint {} has been reopened", key);
         }
 
@@ -106,7 +101,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
         debug!(
             "Message {} for endpoint {} is being prepared to send. Processing time: {:?}",
             event.id.to_string(),
-            endpoint_borrowed.id.to_string(),
+            endpoint.id.to_string(),
             processing_time,
         );
 
@@ -122,10 +117,11 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Data<Storage
                     storage.routed_messages.save(routed_msg);
                     storage.attempt_log.save(log);
 
-                    let endpoint_id = endpoint_borrowed.id;
+                    let mut endpoint = endpoint;
+                    let endpoint_id = endpoint.id;
 
-                    endpoint_borrowed.disable_failing();
-                    storage.endpoints.save(endpoint_borrowed).await;
+                    endpoint.disable_failing();
+                    storage.endpoints.save(endpoint).await;
 
                     debug!("Endpoint {} has been disabled", endpoint_id);
                 }

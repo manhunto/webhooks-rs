@@ -5,14 +5,14 @@ use rand::{thread_rng, Rng};
 use crate::retry::RetryPolicyConfig::{Constant, Exponential};
 
 pub struct Retry {
-    should_retry_policy: Box<dyn ShouldRetryPolicy>,
-    delay_retry_policy: Box<dyn RetryPolicy>,
+    should_retry_policy: Box<dyn ShouldRetryPolicy + Sync + Send>,
+    delay_retry_policy: Box<dyn RetryPolicy + Sync + Send>,
 }
 
 impl Retry {
     fn new(
-        should_retry_policy: Box<dyn ShouldRetryPolicy>,
-        delay_retry_policy: Box<dyn RetryPolicy>,
+        should_retry_policy: Box<dyn ShouldRetryPolicy + Sync + Send>,
+        delay_retry_policy: Box<dyn RetryPolicy + Sync + Send>,
     ) -> Self {
         Self {
             should_retry_policy,
@@ -93,15 +93,15 @@ impl RandomGenerator for RandCrateRandomGenerator {
 }
 
 struct RandomizeDecoratedRetryPolicy {
-    random_generator: Box<dyn RandomGenerator>,
-    decorated: Box<dyn RetryPolicy>,
+    random_generator: Box<dyn RandomGenerator + Sync + Send>,
+    decorated: Box<dyn RetryPolicy + Sync + Send>,
     factor: f64,
 }
 
 impl RandomizeDecoratedRetryPolicy {
     pub fn new(
-        random_generator: Box<dyn RandomGenerator>,
-        decorated: Box<dyn RetryPolicy>,
+        random_generator: Box<dyn RandomGenerator + Sync + Send>,
+        decorated: Box<dyn RetryPolicy + Sync + Send>,
         factor: f64,
     ) -> Self {
         Self {
@@ -217,10 +217,11 @@ impl RetryPolicyBuilder {
             return Err(String::from("Any base policy wasn't chosen"));
         }
 
-        let mut delay_policy: Box<dyn RetryPolicy> = match self.config.clone().unwrap() {
-            Exponential(config) => Box::new(ExponentialRetryPolicy::new(config)),
-            Constant(config) => Box::new(ConstantRetryPolicy::new(config)),
-        };
+        let mut delay_policy: Box<dyn RetryPolicy + Sync + Send> =
+            match self.config.clone().unwrap() {
+                Exponential(config) => Box::new(ExponentialRetryPolicy::new(config)),
+                Constant(config) => Box::new(ConstantRetryPolicy::new(config)),
+            };
 
         if let Some(factor) = self.random_factor {
             delay_policy = Box::new(RandomizeDecoratedRetryPolicy::new(
@@ -292,7 +293,7 @@ mod tests {
 
     fn build_randomize_decorated_retry_policy(
         delay: u64,
-        random_generator: Box<dyn RandomGenerator>,
+        random_generator: Box<dyn RandomGenerator + Sync + Send>,
         factor: f64,
     ) -> RandomizeDecoratedRetryPolicy {
         let config = ConstantConfig::new(Duration::from_millis(delay));

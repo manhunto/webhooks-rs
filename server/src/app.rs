@@ -8,10 +8,11 @@ use log::info;
 use sqlx::PgPool;
 
 use crate::amqp::{establish_connection_with_rabbit, Publisher};
+use crate::dispatch_consumer::consume;
 use crate::routes::routes;
 use crate::storage::Storage;
 
-pub async fn run(listener: TcpListener, pool: PgPool) -> Result<Server, std::io::Error> {
+pub async fn run_server(listener: TcpListener, pool: PgPool) -> Result<Server, std::io::Error> {
     let channel = establish_connection_with_rabbit().await;
     let storage = Data::new(Storage::new(pool));
     let publisher = Data::new(Publisher::new(channel.clone()));
@@ -29,4 +30,10 @@ pub async fn run(listener: TcpListener, pool: PgPool) -> Result<Server, std::io:
     info!("Webhooks server is listening for requests on {}", addr);
 
     Ok(server)
+}
+
+pub async fn run_dispatcher(pool: PgPool) {
+    let channel = establish_connection_with_rabbit().await;
+
+    consume(channel, "dispatcher", Storage::new(pool)).await;
 }

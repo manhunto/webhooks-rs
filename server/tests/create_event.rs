@@ -1,14 +1,18 @@
 use reqwest::Client;
 use serde_json::json;
 
-use crate::common::{Given, TestServer};
+use crate::common::{Given, TestEnvironment};
 
 mod common;
 
 #[tokio::test]
 async fn event_is_created_and_dispatched() {
     // Arrange
-    let server = TestServer::run().await;
+    let environment = TestEnvironment::new().await;
+    let server = environment.server().run().await;
+
+    environment.dispatcher().run().await;
+
     let topic = "contact.created";
     let (app_id, _) = Given::from(&server)
         .endpoint_with_app("http://localhost:8080", vec![topic])

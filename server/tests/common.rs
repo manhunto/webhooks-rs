@@ -8,23 +8,30 @@ use serde_json::{json, Value};
 use sqlx::{migrate, Connection, Executor, PgConnection, PgPool, Pool, Postgres};
 use svix_ksuid::{Ksuid, KsuidLike};
 
-use server::app::run;
+use server::app::{run_dispatcher, run_server};
 use server::config::PostgresConfig;
 use server::logs::init_log;
 use server::storage::Storage;
 use server::types::{ApplicationId, EndpointId};
 
-struct TestEnvironment {
-    pool: Option<Pool<Postgres>>
-}
+struct TestEnvironmentBuilder;
 
-impl TestEnvironment {
-    pub fn server() {
-        
+impl TestEnvironmentBuilder {
+    pub async fn build() -> TestEnvironment {
+        dotenv().ok();
+
+        TestEnvironment {
+            pool: Self::prepare_db().await,
+        }
     }
-    
-    pub fn dispatcher() {
-        
+
+    pub async fn build_with_logs() -> TestEnvironment {
+        dotenv().ok();
+        init_log();
+
+        TestEnvironment {
+            pool: Self::prepare_db().await,
+        }
     }
 
     async fn prepare_db() -> Pool<Postgres> {
@@ -53,68 +60,56 @@ impl TestEnvironment {
             .expect("Failed to migrate");
 
         pool
+    }
 }
 
-#[derive(Default)]
-struct TestServerBuilder {
-    logs: bool,
+pub struct TestEnvironment {
+    pool: Pool<Postgres>,
+}
+
+impl TestEnvironment {
+    pub async fn new() -> Self {
+        TestEnvironmentBuilder::build().await
+    }
+
+    #[allow(dead_code)]
+    pub async fn new_with_logs() -> Self {
+        TestEnvironmentBuilder::build_with_logs().await
+    }
+
+    pub fn server(&self) -> TestServerBuilder {
+        TestServerBuilder::new(self.pool.clone())
+    }
+
+    // todo: why it is detected as unused?
+    #[allow(dead_code)]
+    pub fn dispatcher(&self) -> TestDispatcherBuilder {
+        TestDispatcherBuilder::new(self.pool.clone())
+    }
+}
+
+pub struct TestServerBuilder {
+    pool: Pool<Postgres>,
 }
 
 impl TestServerBuilder {
-    fn with_logs(&mut self) -> &mut Self {
-        self.logs = true;
-        self
+    fn new(pool: Pool<Postgres>) -> Self {
+        Self { pool }
     }
 
-    async fn run(&self) -> TestServer {
-        dotenv().ok();
-
-        if self.logs {
-            init_log();
-        }
-
-        let pool = Self::prepare_db().await;
-
+    pub async fn run(&self) -> TestServer {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = format!("http://{}", listener.local_addr().unwrap());
 
-        let server = run(listener, pool.clone()).await.unwrap();
+        let server = run_server(listener, self.pool.clone()).await.unwrap();
 
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(server);
 
         TestServer {
             server_url: addr,
-            storage: Storage::new(pool),
+            storage: Storage::new(self.pool.clone()),
         }
-    }
-
-    async fn prepare_db() -> Pool<Postgres> {
-        // Create db
-        let pg_config = PostgresConfig::init_from_env().unwrap();
-        let mut connection = PgConnection::connect(&pg_config.connection_string_without_db())
-            .await
-            .expect("Failed to connect to postgres");
-
-        let random_db_name = Ksuid::new(None, None).to_base62();
-        let pg_config = pg_config.with_db(random_db_name.as_str());
-
-        connection
-            .execute(format!(r#"CREATE DATABASE "{}";"#, pg_config.db()).as_str())
-            .await
-            .expect("Failed to create database.");
-
-        // Migrate db
-        let pool = PgPool::connect(&pg_config.connection_string())
-            .await
-            .expect("Failed to connect to postgres");
-
-        migrate!("./migrations")
-            .run(&pool)
-            .await
-            .expect("Failed to migrate");
-
-        pool
     }
 }
 
@@ -124,26 +119,38 @@ pub struct TestServer {
 }
 
 impl TestServer {
-    pub async fn run() -> Self {
-        TestServerBuilder::default().run().await
-    }
-
-    #[allow(dead_code)]
-    pub async fn run_with_logs() -> Self {
-        TestServerBuilder::default().with_logs().run().await
-    }
-
     pub fn url(&self, endpoint: &str) -> String {
         format!("{}/{}", self.base_url(), endpoint)
     }
 
-    pub fn base_url(&self) -> String {
+    fn base_url(&self) -> String {
         format!("{}/v1", self.server_url)
     }
 
     #[allow(dead_code)]
     pub fn storage(&self) -> &Storage {
         &self.storage
+    }
+}
+
+// todo: why it is detected as unused?
+#[allow(dead_code)]
+pub struct TestDispatcherBuilder {
+    pool: Pool<Postgres>,
+}
+
+impl TestDispatcherBuilder {
+    fn new(pool: Pool<Postgres>) -> Self {
+        Self { pool }
+    }
+
+    // todo: why it is detected as unused?
+    #[allow(dead_code)]
+    pub async fn run(&self) {
+        let pool = self.pool.clone();
+
+        #[allow(clippy::let_underscore_future)]
+        tokio::spawn(async move { run_dispatcher(pool).await });
     }
 }
 

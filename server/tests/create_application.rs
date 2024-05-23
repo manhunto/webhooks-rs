@@ -3,14 +3,14 @@ use serde_json::{json, Value};
 
 use server::types::ApplicationId;
 
-use crate::common::TestServer;
+use crate::common::TestEnvironment;
 
 mod common;
 
 #[tokio::test]
 async fn application_is_created() {
     // Arrange
-    let server = TestServer::run().await;
+    let server = TestEnvironment::new().await.server().run().await;
 
     // Act
     let response = Client::new()
