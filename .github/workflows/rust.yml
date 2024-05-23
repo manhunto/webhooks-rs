@@ -99,6 +99,7 @@ jobs:
           fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
+          os: alpine
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
