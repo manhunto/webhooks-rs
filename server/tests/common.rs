@@ -14,6 +14,47 @@ use server::logs::init_log;
 use server::storage::Storage;
 use server::types::{ApplicationId, EndpointId};
 
+struct TestEnvironment {
+    pool: Option<Pool<Postgres>>
+}
+
+impl TestEnvironment {
+    pub fn server() {
+        
+    }
+    
+    pub fn dispatcher() {
+        
+    }
+
+    async fn prepare_db() -> Pool<Postgres> {
+        // Create db
+        let pg_config = PostgresConfig::init_from_env().unwrap();
+        let mut connection = PgConnection::connect(&pg_config.connection_string_without_db())
+            .await
+            .expect("Failed to connect to postgres");
+
+        let random_db_name = Ksuid::new(None, None).to_base62();
+        let pg_config = pg_config.with_db(random_db_name.as_str());
+
+        connection
+            .execute(format!(r#"CREATE DATABASE "{}";"#, pg_config.db()).as_str())
+            .await
+            .expect("Failed to create database.");
+
+        // Migrate db
+        let pool = PgPool::connect(&pg_config.connection_string())
+            .await
+            .expect("Failed to connect to postgres");
+
+        migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("Failed to migrate");
+
+        pool
+}
+
 #[derive(Default)]
 struct TestServerBuilder {
     logs: bool,
