@@ -8,12 +8,6 @@ pub struct ServerConfig {
     pub host: String,
 }
 
-impl ServerConfig {
-    pub fn http_addr(&self) -> String {
-        format!("http://{}:{}", self.host, self.port)
-    }
-}
-
 #[derive(Envconfig)]
 pub struct PostgresConfig {
     #[envconfig(from = "POSTGRES_HOST")]
