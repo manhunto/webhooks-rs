@@ -68,8 +68,8 @@ pub struct AMQPConfig {
     user: String,
     #[envconfig(from = "AMQP_PASSWORD")]
     password: String,
-    #[envconfig(from = "AMQP_QUEUE_SENT_MESSAGE")]
-    queue_sent_message: String,
+    #[envconfig(from = "AMQP_SENT_MESSAGE_QUEUE")]
+    sent_message_queue: String,
 }
 
 impl AMQPConfig {
@@ -80,21 +80,21 @@ impl AMQPConfig {
         )
     }
 
-    pub fn with_queue_sent_message(&self, queue_name: &str) -> Self {
+    pub fn with_sent_message_queue(&self, queue_name: &str) -> Self {
         Self {
             host: self.host.clone(),
             port: self.port,
             user: self.user.clone(),
             password: self.password.clone(),
-            queue_sent_message: queue_name.to_string(),
+            sent_message_queue: queue_name.to_string(),
         }
     }
 
     pub fn sent_message_queue_name(&self) -> String {
-        self.queue_sent_message.clone()
+        self.sent_message_queue.clone()
     }
 
     pub fn sent_message_exchange_name(&self) -> String {
-        format!("{}-exchange", self.queue_sent_message)
+        format!("{}-exchange", self.sent_message_queue)
     }
 }

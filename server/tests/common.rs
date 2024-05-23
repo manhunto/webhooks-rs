@@ -64,7 +64,7 @@ impl TestEnvironmentBuilder {
     fn prepare_amqp(test_id: &str) -> AMQPConfig {
         let config = AMQPConfig::init_from_env().unwrap();
 
-        config.with_queue_sent_message(test_id)
+        config.with_sent_message_queue(test_id)
     }
 }
 
