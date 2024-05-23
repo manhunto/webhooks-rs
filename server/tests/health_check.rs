@@ -1,13 +1,13 @@
 use reqwest::Client;
 
-use crate::common::TestEnvironment;
+use crate::common::{run_test_server, TestEnvironment};
 
 mod common;
 
 #[tokio::test]
 async fn health_check_works() {
     // Arrange
-    let server = TestEnvironment::new().await.server().await;
+    let server = run_test_server!();
 
     // Act
     let response = Client::new()

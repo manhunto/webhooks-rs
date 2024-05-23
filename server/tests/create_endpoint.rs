@@ -5,14 +5,14 @@ use url::Url;
 use server::configuration::domain::{EndpointStatus, TopicsList};
 use server::types::EndpointId;
 
-use crate::common::{Given, TestEnvironment};
+use crate::common::{run_test_server, Given, TestEnvironment};
 
 mod common;
 
 #[tokio::test]
 async fn endpoint_is_created() {
     // Arrange
-    let server = TestEnvironment::new().await.server().await;
+    let server = run_test_server!();
     let app_id = Given::from(&server).app().await;
 
     // Act

@@ -149,6 +149,30 @@ impl TestDispatcherBuilder {
     }
 }
 
+#[allow(unused_macros)]
+macro_rules! run_test_server {
+    () => {
+        TestEnvironment::new().await.server().await
+    };
+}
+
+#[allow(unused_macros)]
+macro_rules! run_test_server_and_dispatcher {
+    () => {{
+        let environment = TestEnvironment::new().await;
+        let server = environment.server().await;
+
+        environment.dispatcher().await;
+
+        server
+    }};
+}
+
+#[allow(unused_imports)]
+pub(crate) use run_test_server;
+#[allow(unused_imports)]
+pub(crate) use run_test_server_and_dispatcher;
+
 #[allow(dead_code)]
 pub struct Given {
     url: String,
