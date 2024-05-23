@@ -28,19 +28,6 @@ impl ApplicationStorage {
         .unwrap();
     }
 
-    pub async fn count(&self) -> usize {
-        query!(
-            r#"
-            SELECT COUNT(*) FROM applications
-        "#
-        )
-        .fetch_one(&self.pool)
-        .await
-        .unwrap()
-        .count
-        .unwrap() as usize
-    }
-
     pub async fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
         let record = query!(
             r#"
@@ -82,19 +69,6 @@ impl EndpointStorage {
         .execute(&self.pool)
         .await
         .unwrap();
-    }
-
-    pub async fn count(&self) -> usize {
-        query!(
-            r#"
-            SELECT COUNT(*) FROM endpoints
-        "#
-        )
-        .fetch_one(&self.pool)
-        .await
-        .unwrap()
-        .count
-        .unwrap() as usize
     }
 
     pub async fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint> {

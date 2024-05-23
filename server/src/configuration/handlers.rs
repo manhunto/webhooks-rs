@@ -18,11 +18,7 @@ pub async fn create_application_handler(
 
     storage.applications.save(app.clone()).await;
 
-    debug!(
-        "Application created: {:?}, count: {}",
-        app,
-        storage.applications.count().await
-    );
+    debug!("Application created: {:?}", app,);
 
     let response = CreateAppResponse::from(app);
 
@@ -44,11 +40,7 @@ pub async fn create_endpoint_handler(
 
     storage.endpoints.save(endpoint.clone()).await;
 
-    debug!(
-        "Endpoint created: {:?}, count: {}",
-        endpoint,
-        storage.endpoints.count().await
-    );
+    debug!("Endpoint created: {:?}", endpoint,);
 
     let response = CreateEndpointResponse::from(endpoint);
 
