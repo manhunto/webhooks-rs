@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use envconfig::Envconfig;
 use lapin::options::{
     BasicPublishOptions, ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions,
 };
@@ -16,11 +15,8 @@ use serde_json::Value;
 use crate::cmd::AsyncMessage;
 use crate::config::AMQPConfig;
 
-pub const SENT_MESSAGE_QUEUE: &str = "sent-message";
-const SENT_MESSAGE_EXCHANGE: &str = "sent-message-exchange";
-
-pub async fn establish_connection_with_rabbit() -> Channel {
-    let addr = AMQPConfig::init_from_env().unwrap().connection_string();
+pub async fn establish_connection_with_rabbit(amqp_config: AMQPConfig) -> Channel {
+    let addr = amqp_config.connection_string();
     let conn = Connection::connect(&addr, ConnectionProperties::default())
         .await
         .unwrap();
@@ -39,7 +35,7 @@ pub async fn establish_connection_with_rabbit() -> Channel {
 
     channel
         .exchange_declare(
-            SENT_MESSAGE_EXCHANGE,
+            &amqp_config.sent_message_exchange_name(),
             ExchangeKind::Custom(String::from("x-delayed-message")),
             ExchangeDeclareOptions::default(),
             args,
@@ -49,7 +45,7 @@ pub async fn establish_connection_with_rabbit() -> Channel {
 
     let queue = channel
         .queue_declare(
-            SENT_MESSAGE_QUEUE,
+            &amqp_config.sent_message_queue_name(),
             QueueDeclareOptions::default(),
             FieldTable::default(),
         )
@@ -59,7 +55,7 @@ pub async fn establish_connection_with_rabbit() -> Channel {
     channel
         .queue_bind(
             queue.name().as_str(),
-            SENT_MESSAGE_EXCHANGE,
+            &amqp_config.sent_message_exchange_name(),
             "",
             QueueBindOptions::default(),
             FieldTable::default(),
@@ -74,11 +70,15 @@ pub async fn establish_connection_with_rabbit() -> Channel {
 
 pub struct Publisher {
     channel: Channel,
+    amqp_config: AMQPConfig,
 }
 
 impl Publisher {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel }
+    pub fn new(channel: Channel, amqp_config: AMQPConfig) -> Self {
+        Self {
+            channel,
+            amqp_config,
+        }
     }
 
     pub async fn publish(&self, message: AsyncMessage) {
@@ -97,9 +97,9 @@ impl Publisher {
         self.do_publish(message, properties).await
     }
 
-    fn resolve_exchange(&self, message: &AsyncMessage) -> &str {
+    fn resolve_exchange(&self, message: &AsyncMessage) -> String {
         match message {
-            AsyncMessage::SentMessage(_) => SENT_MESSAGE_EXCHANGE,
+            AsyncMessage::SentMessage(_) => self.amqp_config.sent_message_exchange_name().clone(),
         }
     }
 
@@ -107,7 +107,7 @@ impl Publisher {
         let confirm = self
             .channel
             .basic_publish(
-                self.resolve_exchange(&message),
+                self.resolve_exchange(&message).as_str(),
                 "",
                 BasicPublishOptions::default(),
                 &Serializer::serialize(message),

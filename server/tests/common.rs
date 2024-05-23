@@ -9,7 +9,7 @@ use sqlx::{migrate, Connection, Executor, PgConnection, PgPool};
 use svix_ksuid::{Ksuid, KsuidLike};
 
 use server::app::{run_dispatcher, run_server};
-use server::config::PostgresConfig;
+use server::config::{AMQPConfig, PostgresConfig};
 use server::logs::init_log;
 use server::storage::Storage;
 use server::types::{ApplicationId, EndpointId};
@@ -20,29 +20,28 @@ impl TestEnvironmentBuilder {
     pub async fn build() -> TestEnvironment {
         dotenv().ok();
 
+        let test_id = Ksuid::new(None, None).to_base62();
+
         TestEnvironment {
-            pool: Self::prepare_db().await,
+            pool: Self::prepare_db(test_id.as_str()).await,
+            amqp_config: Self::prepare_amqp(test_id.as_str()),
         }
     }
 
     pub async fn build_with_logs() -> TestEnvironment {
-        dotenv().ok();
         init_log();
 
-        TestEnvironment {
-            pool: Self::prepare_db().await,
-        }
+        Self::build().await
     }
 
-    async fn prepare_db() -> PgPool {
+    async fn prepare_db(test_id: &str) -> PgPool {
         // Create db
         let pg_config = PostgresConfig::init_from_env().unwrap();
         let mut connection = PgConnection::connect(&pg_config.connection_string_without_db())
             .await
             .expect("Failed to connect to postgres");
 
-        let random_db_name = Ksuid::new(None, None).to_base62();
-        let pg_config = pg_config.with_db(random_db_name.as_str());
+        let pg_config = pg_config.with_db(test_id);
 
         connection
             .execute(format!(r#"CREATE DATABASE "{}";"#, pg_config.db()).as_str())
@@ -61,10 +60,17 @@ impl TestEnvironmentBuilder {
 
         pool
     }
+
+    fn prepare_amqp(test_id: &str) -> AMQPConfig {
+        let config = AMQPConfig::init_from_env().unwrap();
+
+        config.with_queue_sent_message(test_id)
+    }
 }
 
 pub struct TestEnvironment {
     pool: PgPool,
+    amqp_config: AMQPConfig,
 }
 
 impl TestEnvironment {
@@ -78,29 +84,36 @@ impl TestEnvironment {
     }
 
     pub async fn server(&self) -> TestServer {
-        TestServerBuilder::new(self.pool.clone()).run().await
+        TestServerBuilder::new(self.pool.clone(), self.amqp_config.clone())
+            .run()
+            .await
     }
 
     #[allow(dead_code)]
     pub async fn dispatcher(&self) {
-        TestDispatcherBuilder::new(self.pool.clone()).run().await
+        TestDispatcherBuilder::new(self.pool.clone(), self.amqp_config.clone())
+            .run()
+            .await
     }
 }
 
 struct TestServerBuilder {
     pool: PgPool,
+    amqp_config: AMQPConfig,
 }
 
 impl TestServerBuilder {
-    fn new(pool: PgPool) -> Self {
-        Self { pool }
+    fn new(pool: PgPool, amqp_config: AMQPConfig) -> Self {
+        Self { pool, amqp_config }
     }
 
     async fn run(&self) -> TestServer {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = format!("http://{}", listener.local_addr().unwrap());
 
-        let server = run_server(listener, self.pool.clone()).await.unwrap();
+        let server = run_server(listener, self.pool.clone(), self.amqp_config.clone())
+            .await
+            .unwrap();
 
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(server);
@@ -134,18 +147,20 @@ impl TestServer {
 
 struct TestDispatcherBuilder {
     pool: PgPool,
+    amqp_config: AMQPConfig,
 }
 
 impl TestDispatcherBuilder {
-    fn new(pool: PgPool) -> Self {
-        Self { pool }
+    fn new(pool: PgPool, amqp_config: AMQPConfig) -> Self {
+        Self { pool, amqp_config }
     }
 
     async fn run(&self) {
         let pool = self.pool.clone();
+        let amqp_config = self.amqp_config.clone();
 
         #[allow(clippy::let_underscore_future)]
-        tokio::spawn(async move { run_dispatcher(pool).await });
+        tokio::spawn(async move { run_dispatcher(pool, amqp_config).await });
     }
 }
 

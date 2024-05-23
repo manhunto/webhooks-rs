@@ -5,7 +5,7 @@ use envconfig::Envconfig;
 use sqlx::PgPool;
 
 use server::app::run_server;
-use server::config::{PostgresConfig, ServerConfig};
+use server::config::{AMQPConfig, PostgresConfig, ServerConfig};
 use server::logs::init_log;
 
 #[actix_web::main]
@@ -20,5 +20,7 @@ async fn main() -> Result<(), std::io::Error> {
     let con_string = PostgresConfig::init_from_env().unwrap().connection_string();
     let pool = PgPool::connect(&con_string).await.unwrap();
 
-    run_server(listener, pool).await?.await
+    let amqp_config = AMQPConfig::init_from_env().unwrap();
+
+    run_server(listener, pool, amqp_config).await?.await
 }

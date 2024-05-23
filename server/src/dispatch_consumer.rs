@@ -6,15 +6,21 @@ use lapin::types::FieldTable;
 use lapin::Channel;
 use log::{debug, error, info};
 
-use crate::amqp::{Publisher, Serializer, SENT_MESSAGE_QUEUE};
+use crate::amqp::{Publisher, Serializer};
 use crate::circuit_breaker::{CircuitBreaker, Error};
 use crate::cmd::AsyncMessage;
+use crate::config::AMQPConfig;
 use crate::retry::RetryPolicyBuilder;
 use crate::sender::Sender;
 use crate::storage::Storage;
 use crate::time::Clock;
 
-pub async fn consume(channel: Channel, consumer_tag: &str, storage: Storage) {
+pub async fn consume(
+    channel: Channel,
+    consumer_tag: &str,
+    storage: Storage,
+    amqp_config: AMQPConfig,
+) {
     let retry_policy = RetryPolicyBuilder::new()
         .max_retries(5)
         .exponential(2, Duration::from_secs(2))
@@ -26,7 +32,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Storage) {
 
     let mut consumer = channel
         .basic_consume(
-            SENT_MESSAGE_QUEUE,
+            &amqp_config.sent_message_queue_name(),
             consumer_tag,
             BasicConsumeOptions::default(),
             FieldTable::default(),
@@ -34,7 +40,7 @@ pub async fn consume(channel: Channel, consumer_tag: &str, storage: Storage) {
         .await
         .unwrap();
 
-    let publisher = Publisher::new(channel);
+    let publisher = Publisher::new(channel, amqp_config);
     let clock = Clock::chrono();
 
     info!("consumer is ready");

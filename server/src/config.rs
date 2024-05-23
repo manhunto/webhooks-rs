@@ -58,7 +58,7 @@ impl PostgresConfig {
     }
 }
 
-#[derive(Envconfig)]
+#[derive(Envconfig, Clone)]
 pub struct AMQPConfig {
     #[envconfig(from = "AMQP_HOST")]
     host: String,
@@ -68,6 +68,8 @@ pub struct AMQPConfig {
     user: String,
     #[envconfig(from = "AMQP_PASSWORD")]
     password: String,
+    #[envconfig(from = "AMQP_QUEUE_SENT_MESSAGE")]
+    queue_sent_message: String,
 }
 
 impl AMQPConfig {
@@ -76,5 +78,23 @@ impl AMQPConfig {
             "amqp://{}:{}@{}:{}",
             self.user, self.password, self.host, self.port
         )
+    }
+
+    pub fn with_queue_sent_message(&self, queue_name: &str) -> Self {
+        Self {
+            host: self.host.clone(),
+            port: self.port,
+            user: self.user.clone(),
+            password: self.password.clone(),
+            queue_sent_message: queue_name.to_string(),
+        }
+    }
+
+    pub fn sent_message_queue_name(&self) -> String {
+        self.queue_sent_message.clone()
+    }
+
+    pub fn sent_message_exchange_name(&self) -> String {
+        format!("{}-exchange", self.queue_sent_message)
     }
 }
