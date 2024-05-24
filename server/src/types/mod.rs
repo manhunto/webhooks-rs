@@ -1,9 +1,7 @@
 macro_rules! make_ksuid {
     ($name: ident, $prefix: literal) => {
         #[derive(Clone, Copy, Eq, PartialEq)]
-        pub struct $name {
-            id: svix_ksuid::Ksuid,
-        }
+        pub struct $name ([u8; 27]);
 
         impl $name {
             const PREFIX: &'static str = $prefix;
@@ -12,21 +10,17 @@ macro_rules! make_ksuid {
             pub fn new() -> Self {
                 use svix_ksuid::{Ksuid, KsuidLike};
 
-                Self {
-                    id: Ksuid::new(None, None),
-                }
+                Self (Ksuid::new(None, None).to_base62().as_bytes().try_into().unwrap())
             }
 
             pub fn to_base62(self) -> String {
-                use svix_ksuid::KsuidLike;
-
-                self.id.to_base62()
+                String::from_utf8_lossy(&self.0).to_string()
             }
         }
 
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}{}{}", Self::PREFIX, Self::TERMINATOR, self.id)
+                write!(f, "{}{}{}", Self::PREFIX, Self::TERMINATOR, self.to_base62())
             }
         }
 
@@ -51,6 +45,7 @@ macro_rules! make_ksuid {
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 use itertools::Itertools;
+                use svix_ksuid::KsuidLike;
 
                 let tuple = s
                     .split_terminator(Self::TERMINATOR)
@@ -85,15 +80,39 @@ macro_rules! make_ksuid {
                     )));
                 }
 
-                Ok(Self {
-                    id: ksuid.unwrap(),
-                })
+                Ok(Self(ksuid.unwrap().to_base62().as_bytes().try_into().unwrap()))
             }
         }
 
         impl Default for $name {
             fn default() -> Self {
                 Self::new()
+            }
+        }
+
+        impl sqlx::Decode<'_, sqlx::Postgres> for $name {
+            fn decode(value: <sqlx::Postgres as sqlx::database::HasValueRef<'_>>::ValueRef) -> Result<Self, sqlx::error::BoxDynError> {
+                let value = <&str as sqlx::Decode<sqlx::Postgres>>::decode(value)?;
+
+                Ok(Self(value.as_bytes().try_into().unwrap()))
+            }
+        }
+
+        impl sqlx::Type<sqlx::Postgres> for $name {
+            fn type_info() -> sqlx::postgres::PgTypeInfo {
+                <&str as sqlx::Type<sqlx::Postgres>>::type_info()
+            }
+
+            fn compatible(_ty: &sqlx::postgres::PgTypeInfo) -> bool {
+                true
+            }
+        }
+
+        impl sqlx::Encode<'_, sqlx::Postgres> for $name {
+            fn encode_by_ref(&self, buf: &mut <sqlx::Postgres as sqlx::database::HasArguments<'_>>::ArgumentBuffer) -> sqlx::encode::IsNull {
+                buf.extend(self.0);
+
+                sqlx::encode::IsNull::No
             }
         }
     };

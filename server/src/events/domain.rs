@@ -80,15 +80,13 @@ impl Event {
 
 impl FromRow<'_, PgRow> for Event {
     fn from_row(row: &'_ PgRow) -> Result<Self, sqlx::Error> {
-        let id: String = row.try_get("id")?;
-        let app_id: String = row.try_get("app_id")?;
         let created_at: NaiveDateTime = row.try_get("created_at")?;
         let topic: String = row.try_get("topic")?;
         let payload: Value = row.try_get("payload")?;
 
         Ok(Event {
-            id: EventId::try_from(format!("evt_{}", id)).unwrap(), // fixme: without adding prefix
-            app_id: ApplicationId::try_from(format!("app_{}", app_id)).unwrap(), // fixme: without adding prefix
+            id: row.try_get("id")?,
+            app_id: row.try_get("app_id")?,
             created_at: created_at.and_utc(),
             topic: Topic::try_from(topic).unwrap(),
             payload: Payload::from(payload),

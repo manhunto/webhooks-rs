@@ -77,7 +77,7 @@ impl EndpointStorage {
             SELECT * FROM endpoints WHERE app_id = $1
         "#,
         )
-        .bind(application_id.to_base62())
+        .bind(application_id)
         .fetch_all(&self.pool)
         .await
         .expect("Error in query");
@@ -94,7 +94,7 @@ impl EndpointStorage {
             SELECT * FROM endpoints WHERE id = $1
         "#,
         )
-        .bind(endpoint_id.to_base62())
+        .bind(endpoint_id)
         .fetch_one(&self.pool)
         .await?)
     }

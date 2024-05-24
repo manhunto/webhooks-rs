@@ -39,7 +39,7 @@ impl EventStorage {
             SELECT * FROM events WHERE id = $1
         "#,
         )
-        .bind(event_id.to_base62())
+        .bind(event_id)
         .fetch_one(&self.pool)
         .await?)
     }

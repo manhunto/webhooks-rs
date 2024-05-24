@@ -112,8 +112,6 @@ impl Endpoint {
 
 impl FromRow<'_, PgRow> for Endpoint {
     fn from_row(row: &'_ PgRow) -> Result<Self, sqlx::Error> {
-        let id: String = row.try_get("id")?;
-        let app_id: String = row.try_get("app_id")?;
         let url: String = row.try_get("url")?;
         let status: String = row.try_get("status")?;
         let topics: JsonValue = row.try_get("topics")?;
@@ -126,8 +124,8 @@ impl FromRow<'_, PgRow> for Endpoint {
             .collect();
 
         Ok(Endpoint {
-            id: EndpointId::try_from(format!("ep_{}", id)).unwrap(), // fixme: without adding prefix
-            app_id: ApplicationId::try_from(format!("app_{}", app_id)).unwrap(), // fixme: without adding prefix
+            id: row.try_get("id")?,
+            app_id: row.try_get("app_id")?,
             url: Url::parse(&url).unwrap(),
             topics: TopicsList::try_from(topics).unwrap(),
             status: EndpointStatus::try_from(status.trim().to_string()).unwrap(),
