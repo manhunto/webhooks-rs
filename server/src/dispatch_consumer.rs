@@ -53,11 +53,11 @@ pub async fn consume(
 
         info!("message consumed: {:?}", cmd);
 
-        let routed_msg = storage.routed_messages.get(cmd.routed_msg_id());
-        if routed_msg.is_err() {
+        let msg = storage.messages.get(cmd.msg_id());
+        if msg.is_err() {
             error!(
-                "Routed message {} doesn't exist and cannot be dispatched",
-                cmd.routed_msg_id()
+                "Message {} doesn't exist and cannot be dispatched",
+                cmd.msg_id()
             );
 
             delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -65,13 +65,13 @@ pub async fn consume(
             continue;
         }
 
-        let mut routed_msg = routed_msg.unwrap();
+        let mut msg = msg.unwrap();
 
-        let event = storage.events.get(routed_msg.event_id).await;
+        let event = storage.events.get(msg.event_id).await;
         if event.is_err() {
             error!(
                 "Message {} doesn't exist and cannot be dispatched",
-                routed_msg.event_id
+                msg.event_id
             );
 
             delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -79,12 +79,12 @@ pub async fn consume(
             continue;
         }
 
-        let endpoint_id = routed_msg.endpoint_id;
+        let endpoint_id = msg.endpoint_id;
         let endpoint = storage.endpoints.get(&endpoint_id).await;
         if endpoint.is_err() {
             error!(
                 "Endpoint {} doesn't not exists and message {} cannot be dispatched",
-                endpoint_id, routed_msg.event_id
+                endpoint_id, msg.event_id
             );
 
             delivery.ack(BasicAckOptions::default()).await.expect("ack");
@@ -113,14 +113,14 @@ pub async fn consume(
 
         match circuit_breaker.call(&key, || sender.send()).await {
             Ok(res) => {
-                let log = routed_msg.record_attempt(res, processing_time);
-                storage.routed_messages.save(routed_msg);
+                let log = msg.record_attempt(res, processing_time);
+                storage.messages.save(msg);
                 storage.attempt_log.save(log);
             }
             Err(err) => match err {
                 Error::Closed(res) => {
-                    let log = routed_msg.record_attempt(res, processing_time);
-                    storage.routed_messages.save(routed_msg);
+                    let log = msg.record_attempt(res, processing_time);
+                    storage.messages.save(msg);
                     storage.attempt_log.save(log);
 
                     let mut endpoint = endpoint;
@@ -132,8 +132,8 @@ pub async fn consume(
                     debug!("Endpoint {} has been disabled", endpoint_id);
                 }
                 Error::Open(res) => {
-                    let log = routed_msg.record_attempt(res, processing_time);
-                    storage.routed_messages.save(routed_msg);
+                    let log = msg.record_attempt(res, processing_time);
+                    storage.messages.save(msg);
                     storage.attempt_log.save(log);
 
                     if retry_policy.is_retryable(cmd.attempt) {
@@ -158,7 +158,7 @@ pub async fn consume(
                 Error::Rejected => {
                     debug!(
                         "Endpoint {} is closed. Message {} rejected.",
-                        key, routed_msg.event_id
+                        key, msg.event_id
                     );
 
                     // todo do something with message? add to some "not delivered" bucket?

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::types::RoutedMessageId;
+use crate::types::MessageId;
 
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "t", content = "c")]
@@ -10,26 +10,26 @@ pub enum AsyncMessage {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SentMessage {
-    routed_msg_id: String,
+    msg_id: String,
     pub attempt: usize,
 }
 
 impl SentMessage {
-    pub fn new(routed_message_id: RoutedMessageId) -> Self {
+    pub fn new(message_id: MessageId) -> Self {
         Self {
-            routed_msg_id: routed_message_id.to_string(),
+            msg_id: message_id.to_string(),
             attempt: 1,
         }
     }
 
     pub fn with_increased_attempt(&self) -> SentMessage {
         Self {
-            routed_msg_id: self.routed_msg_id.clone(),
+            msg_id: self.msg_id.clone(),
             attempt: self.attempt + 1,
         }
     }
 
-    pub fn routed_msg_id(&self) -> RoutedMessageId {
-        RoutedMessageId::try_from(self.routed_msg_id.clone()).unwrap()
+    pub fn msg_id(&self) -> MessageId {
+        MessageId::try_from(self.msg_id.clone()).unwrap()
     }
 }

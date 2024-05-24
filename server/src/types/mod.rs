@@ -100,7 +100,7 @@ macro_rules! make_ksuid {
 }
 
 make_ksuid!(EventId, "evt");
-make_ksuid!(RoutedMessageId, "rmsg");
+make_ksuid!(MessageId, "rmsg");
 make_ksuid!(ApplicationId, "app");
 make_ksuid!(EndpointId, "ep");
 
@@ -120,9 +120,15 @@ mod ksuid_tests {
         assert!(TestId::from_str("test_1srOrx2ZWZBpBUvZwXKQmoEYga2").is_ok())
     }
 
-    #[test_case("invalid_1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should have prefix 'test' but have 'invalid'"; "invalid prefix")]
-    #[test_case("1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "without prefix")]
-    #[test_case("invalid_", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "only prefix")]
+    #[test_case(
+        "invalid_1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should have prefix 'test' but have 'invalid'"; "invalid prefix"
+    )]
+    #[test_case(
+        "1srOrx2ZWZBpBUvZwXKQmoEYga2", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "without prefix"
+    )]
+    #[test_case(
+        "invalid_", "'TestId' type should has 'test' prefix and valid id. Example 'test_1srOrx2ZWZBpBUvZwXKQmoEYga2'"; "only prefix"
+    )]
     #[test_case("test_foo", "'TestId' type received invalid id 'foo'"; "invalid id")]
     fn invalid(id: &str, error: &str) {
         assert_eq!(

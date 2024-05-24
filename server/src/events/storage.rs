@@ -5,8 +5,8 @@ use sqlx::{query, query_as, PgPool};
 
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
-use crate::events::domain::{AttemptLog, Event, RoutedMessage};
-use crate::types::{EventId, RoutedMessageId};
+use crate::events::domain::{AttemptLog, Event, Message};
+use crate::types::{EventId, MessageId};
 
 pub struct EventStorage {
     pool: PgPool,
@@ -45,17 +45,17 @@ impl EventStorage {
     }
 }
 
-pub trait RoutedMessageStorage {
-    fn save(&self, routed_message: RoutedMessage);
+pub trait MessageStorage {
+    fn save(&self, message: Message);
 
-    fn get(&self, routed_message_id: RoutedMessageId) -> Result<RoutedMessage, Error>;
+    fn get(&self, message_id: MessageId) -> Result<Message, Error>;
 }
 
-pub struct InMemoryRoutedMessageStorage {
-    data: Mutex<Vec<RoutedMessage>>,
+pub struct InMemoryMessageStorage {
+    data: Mutex<Vec<Message>>,
 }
 
-impl InMemoryRoutedMessageStorage {
+impl InMemoryMessageStorage {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
@@ -64,20 +64,20 @@ impl InMemoryRoutedMessageStorage {
     }
 }
 
-impl RoutedMessageStorage for InMemoryRoutedMessageStorage {
-    fn save(&self, routed_message: RoutedMessage) {
+impl MessageStorage for InMemoryMessageStorage {
+    fn save(&self, message: Message) {
         let mut data = self.data.lock().unwrap();
 
-        data.push(routed_message);
+        data.push(message);
     }
 
-    fn get(&self, routed_message_id: RoutedMessageId) -> Result<RoutedMessage, Error> {
+    fn get(&self, message_id: MessageId) -> Result<Message, Error> {
         let data = self.data.lock().unwrap();
 
         data.clone()
             .into_iter()
-            .find(|routed_message| routed_message.id.eq(&routed_message_id))
-            .ok_or_else(|| EntityNotFound("Routed message not found".to_string()))
+            .find(|message| message.id.eq(&message_id))
+            .ok_or_else(|| EntityNotFound("Message not found".to_string()))
     }
 }
 

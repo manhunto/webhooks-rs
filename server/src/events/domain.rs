@@ -10,7 +10,7 @@ use sqlx::{FromRow, Row};
 use crate::configuration::domain::{Endpoint, Topic};
 use crate::sender::{SentResult, Status};
 use crate::time::Clock;
-use crate::types::{ApplicationId, EndpointId, EventId, RoutedMessageId};
+use crate::types::{ApplicationId, EndpointId, EventId, MessageId};
 
 #[derive(Debug, Clone)]
 pub struct Payload {
@@ -97,14 +97,14 @@ impl FromRow<'_, PgRow> for Event {
 }
 
 #[derive(Debug, Clone)]
-pub struct RoutedMessage {
-    pub id: RoutedMessageId,
+pub struct Message {
+    pub id: MessageId,
     pub event_id: EventId,
     pub endpoint_id: EndpointId,
     attempts: AttemptCollection,
 }
 
-impl From<(Event, Endpoint)> for RoutedMessage {
+impl From<(Event, Endpoint)> for Message {
     fn from(value: (Event, Endpoint)) -> Self {
         let (event, endpoint) = value;
 
@@ -112,10 +112,10 @@ impl From<(Event, Endpoint)> for RoutedMessage {
     }
 }
 
-impl RoutedMessage {
+impl Message {
     fn new(event_id: EventId, endpoint_id: EndpointId) -> Self {
         Self {
-            id: RoutedMessageId::new(),
+            id: MessageId::new(),
             event_id,
             endpoint_id,
             attempts: AttemptCollection::new(),
@@ -196,7 +196,7 @@ impl AttemptCollection {
 
 pub struct AttemptLog {
     #[allow(dead_code)]
-    routed_message_id: RoutedMessageId,
+    message_id: MessageId,
     #[allow(dead_code)]
     attempt_id: u16,
     #[allow(dead_code)]
@@ -209,14 +209,14 @@ pub struct AttemptLog {
 
 impl AttemptLog {
     pub fn new(
-        routed_message_id: RoutedMessageId,
+        message_id: MessageId,
         attempt_id: u16,
         processing_time: Duration,
         response_time: Duration,
         response_body: Option<String>,
     ) -> Self {
         Self {
-            routed_message_id,
+            message_id,
             attempt_id,
             processing_time,
             response_time,
