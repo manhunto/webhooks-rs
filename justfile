@@ -86,3 +86,6 @@ rabbitmq-dev-build:
 
 rabbitmq-dev-push:
     docker push {{ rabbitmq-dev-image }}
+
+create-migration NAME:
+    sqlx migrate add --source=server/migrations "{{ NAME }}"

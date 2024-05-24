@@ -20,9 +20,7 @@ pub async fn create_application_handler(
 
     debug!("Application created: {:?}", app,);
 
-    let response = CreateAppResponse::from(app);
-
-    HttpResponse::Created().json(response)
+    HttpResponse::Created().json(CreateAppResponse::from(app))
 }
 
 pub async fn create_endpoint_handler(
@@ -42,9 +40,7 @@ pub async fn create_endpoint_handler(
 
     debug!("Endpoint created: {:?}", endpoint,);
 
-    let response = CreateEndpointResponse::from(endpoint);
-
-    Ok(HttpResponse::Created().json(response))
+    Ok(HttpResponse::Created().json(CreateEndpointResponse::from(endpoint)))
 }
 
 pub async fn disable_endpoint_handler(

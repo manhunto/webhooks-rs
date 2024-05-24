@@ -7,7 +7,7 @@ use crate::cmd::{AsyncMessage, SentMessage};
 use crate::configuration::domain::{Endpoint, Topic};
 use crate::error::ResponseError;
 use crate::events::domain::{Event, Payload, RoutedMessage};
-use crate::events::models::CreateEventRequest;
+use crate::events::models::{CreateEventRequest, CreateEventResponse};
 use crate::storage::Storage;
 use crate::time::Clock;
 use crate::types::ApplicationId;
@@ -29,7 +29,7 @@ pub async fn create_event_handler(
         &clock,
     );
 
-    storage.events.save(event.clone());
+    storage.events.save(event.clone()).await;
 
     debug!("Message created: {:?}", event,);
 
@@ -62,5 +62,5 @@ pub async fn create_event_handler(
         debug!("Message {} published on the queue", routed_msg.id)
     }
 
-    Ok(HttpResponse::Created())
+    Ok(HttpResponse::Ok().json(CreateEventResponse::from(event)))
 }

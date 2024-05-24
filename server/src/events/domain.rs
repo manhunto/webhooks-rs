@@ -1,9 +1,11 @@
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
+use sqlx::postgres::PgRow;
+use sqlx::{FromRow, Row};
 
 use crate::configuration::domain::{Endpoint, Topic};
 use crate::sender::{SentResult, Status};
@@ -73,6 +75,24 @@ impl Event {
         processing_time
             .to_std()
             .unwrap_or_else(|_| Duration::from_secs(i64::MAX as u64)) // fixme: is max correct?
+    }
+}
+
+impl FromRow<'_, PgRow> for Event {
+    fn from_row(row: &'_ PgRow) -> Result<Self, sqlx::Error> {
+        let id: String = row.try_get("id")?;
+        let app_id: String = row.try_get("app_id")?;
+        let created_at: NaiveDateTime = row.try_get("created_at")?;
+        let topic: String = row.try_get("topic")?;
+        let payload: Value = row.try_get("payload")?;
+
+        Ok(Event {
+            id: EventId::try_from(format!("evt_{}", id)).unwrap(), // fixme: without adding prefix
+            app_id: ApplicationId::try_from(format!("app_{}", app_id)).unwrap(), // fixme: without adding prefix
+            created_at: created_at.and_utc(),
+            topic: Topic::try_from(topic).unwrap(),
+            payload: Payload::from(payload),
+        })
     }
 }
 

@@ -1,41 +1,47 @@
 use std::sync::Mutex;
 
+use serde_json::json;
+use sqlx::{query, query_as, PgPool};
+
 use crate::error::Error;
 use crate::error::Error::EntityNotFound;
 use crate::events::domain::{AttemptLog, Event, RoutedMessage};
 use crate::types::{EventId, RoutedMessageId};
 
-pub trait MessageStorage {
-    fn save(&self, app: Event);
-
-    fn get(&self, event_id: EventId) -> Result<Event, Error>;
+pub struct EventStorage {
+    pool: PgPool,
 }
 
-pub struct InMemoryMessageStorage {
-    events: Mutex<Vec<Event>>,
-}
-
-impl InMemoryMessageStorage {
-    pub fn new() -> Self {
-        Self {
-            events: Mutex::new(vec![]),
-        }
+impl EventStorage {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
-}
-
-impl MessageStorage for InMemoryMessageStorage {
-    fn save(&self, app: Event) {
-        self.events.lock().unwrap().push(app);
+    pub async fn save(&self, event: Event) {
+        query!(
+            r#"
+            INSERT INTO events (id, app_id, payload, topic, created_at)
+            VALUES ($1, $2, $3, $4, $5)
+        "#,
+            event.id.to_base62(),
+            event.app_id.to_base62(),
+            json!(event.payload),
+            event.topic.to_string(),
+            event.created_at.naive_utc()
+        )
+        .execute(&self.pool)
+        .await
+        .unwrap();
     }
 
-    fn get(&self, event_id: EventId) -> Result<Event, Error> {
-        self.events
-            .lock()
-            .unwrap()
-            .clone()
-            .into_iter()
-            .find(|event| event.id.eq(&event_id))
-            .ok_or_else(|| EntityNotFound("Message not found".to_string()))
+    pub async fn get(&self, event_id: EventId) -> Result<Event, Error> {
+        Ok(query_as::<_, Event>(
+            r#"
+            SELECT * FROM events WHERE id = $1
+        "#,
+        )
+        .bind(event_id.to_base62())
+        .fetch_one(&self.pool)
+        .await?)
     }
 }
 
@@ -50,6 +56,7 @@ pub struct InMemoryRoutedMessageStorage {
 }
 
 impl InMemoryRoutedMessageStorage {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             data: Mutex::new(vec![]),
@@ -83,6 +90,7 @@ pub struct InMemoryAttemptLogStorage {
 }
 
 impl InMemoryAttemptLogStorage {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             data: Mutex::new(vec![]),

@@ -67,7 +67,7 @@ pub async fn consume(
 
         let mut routed_msg = routed_msg.unwrap();
 
-        let event = storage.events.get(routed_msg.event_id);
+        let event = storage.events.get(routed_msg.event_id).await;
         if event.is_err() {
             error!(
                 "Message {} doesn't exist and cannot be dispatched",

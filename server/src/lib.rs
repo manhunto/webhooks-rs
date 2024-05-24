@@ -6,7 +6,7 @@ pub mod config;
 pub mod configuration;
 pub mod dispatch_consumer;
 mod error;
-mod events;
+pub mod events;
 pub mod handlers;
 pub mod logs;
 pub mod retry;
