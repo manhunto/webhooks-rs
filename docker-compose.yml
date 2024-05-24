@@ -1,12 +1,10 @@
 version: "3.8"
 services:
   rabbitmq:
+    container_name: rabbitmq
     build:
       context: .
       dockerfile: .docker/rabbitmq/Dockerfile
-      args:
-        RABBITMQ_VERSION: "3.13.0"
-    container_name: 'rabbitmq'
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -15,7 +13,7 @@ services:
       - rabbitmq
   postgres:
     container_name: postgres
-    image: postgres:16.3-alpine3.19
+    image: postgres:16.3-alpine3.20
     ports:
       - "5432:5432"
     env_file:

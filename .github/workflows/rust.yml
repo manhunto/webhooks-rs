@@ -21,7 +21,7 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:16.3-alpine3.20
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -42,7 +42,7 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:16.3-alpine3.20
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -70,7 +70,7 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:16.3-alpine3.20
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -114,7 +114,7 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:16.3-alpine3.20
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks
@@ -142,7 +142,7 @@ jobs:
         password: ${{ secrets.GHCR_TOKEN }}
     services:
       postgres:
-        image: postgres:16.3-alpine3.19
+        image: postgres:16.3-alpine3.20
         env:
           POSTGRES_USER: webhooks
           POSTGRES_PASSWORD: webhooks

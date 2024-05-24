@@ -1,4 +1,4 @@
-FROM rust:1.78-alpine3.19 as builder
+FROM rust:1.78-alpine3.20 as builder
 
 RUN apk add --no-cache \
     alpine-sdk \
@@ -10,7 +10,7 @@ RUN cargo install --version=0.1.48 cargo-udeps
 RUN cargo install --version=0.30.0 cargo-tarpaulin
 RUN cargo install --version=1.0.9 cargo-sort
 
-FROM rust:1.78-alpine3.19
+FROM rust:1.78-alpine3.20
 
 RUN apk update \
     && apk upgrade --available \
