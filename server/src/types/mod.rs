@@ -119,7 +119,7 @@ macro_rules! make_ksuid {
 }
 
 make_ksuid!(EventId, "evt");
-make_ksuid!(MessageId, "rmsg");
+make_ksuid!(MessageId, "msg");
 make_ksuid!(ApplicationId, "app");
 make_ksuid!(EndpointId, "ep");
 
