@@ -17,17 +17,17 @@ impl EventStorage {
         Self { pool }
     }
     pub async fn save(&self, event: Event) {
-        query!(
+        query(
             r#"
             INSERT INTO events (id, app_id, payload, topic, created_at)
             VALUES ($1, $2, $3, $4, $5)
         "#,
-            event.id.to_base62(),
-            event.app_id.to_base62(),
-            json!(event.payload),
-            event.topic.to_string(),
-            event.created_at.naive_utc()
         )
+        .bind(event.id)
+        .bind(event.app_id)
+        .bind(json!(event.payload))
+        .bind(event.topic.to_string())
+        .bind(event.created_at.naive_utc())
         .execute(&self.pool)
         .await
         .unwrap();

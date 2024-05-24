@@ -28,6 +28,15 @@ impl Application {
     }
 }
 
+impl FromRow<'_, PgRow> for Application {
+    fn from_row(row: &'_ PgRow) -> Result<Self, sqlx::Error> {
+        Ok(Application {
+            id: row.try_get("id")?,
+            name: row.try_get("name")?,
+        })
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum EndpointStatus {
     Initial,

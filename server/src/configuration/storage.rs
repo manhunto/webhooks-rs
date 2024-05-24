@@ -15,33 +15,28 @@ impl ApplicationStorage {
     }
 
     pub async fn save(&self, app: Application) {
-        query!(
+        query(
             r#"
             INSERT INTO applications (id, name)
             VALUES ($1, $2)
         "#,
-            app.id.to_base62(),
-            app.name
         )
+        .bind(app.id)
+        .bind(app.name)
         .execute(&self.pool)
         .await
         .unwrap();
     }
 
     pub async fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
-        let record = query!(
+        Ok(query_as::<_, Application>(
             r#"
             SELECT * FROM applications WHERE id = $1
-        "#,
-            app_id.to_base62()
+            "#,
         )
+        .bind(app_id)
         .fetch_one(&self.pool)
-        .await?;
-
-        Ok(Application {
-            name: record.name,
-            id: ApplicationId::try_from(format!("app_{}", record.id)).unwrap(), // fixme: without adding prefix
-        })
+        .await?)
     }
 }
 
@@ -55,17 +50,17 @@ impl EndpointStorage {
     }
 
     pub async fn save(&self, endpoint: Endpoint) {
-        query!(
+        query(
             r#"
         INSERT INTO endpoints (id, app_id, url, topics, status)
         VALUES ($1, $2, $3, $4, $5)
         "#,
-            endpoint.id.to_base62(),
-            endpoint.app_id.to_base62(),
-            endpoint.url.to_string(),
-            json!(endpoint.topics.as_strings()),
-            endpoint.status.to_string()
         )
+        .bind(endpoint.id)
+        .bind(endpoint.app_id)
+        .bind(endpoint.url.to_string())
+        .bind(json!(endpoint.topics.as_strings()))
+        .bind(endpoint.status.to_string())
         .execute(&self.pool)
         .await
         .unwrap();
