@@ -72,7 +72,6 @@ async fn event_is_created_and_dispatched() {
         serde_json::to_value(event.payload.clone()).unwrap()
     );
     assert_eq!(Topic::try_from("contact.created").unwrap(), event.topic);
-    println!("{:?}", event);
 
     sleep(Duration::from_millis(10)).await; // todo how to remove sleep? consume it once?
     mock.assert_async().await;
