@@ -1,12 +1,12 @@
 use std::sync::Mutex;
 
 use serde_json::json;
-use sqlx::{query, query_as, PgPool};
+use sqlx::{query, query_as, FromRow, PgPool, Row};
 
 use crate::error::Error;
-use crate::error::Error::EntityNotFound;
-use crate::events::domain::{AttemptLog, Event, Message};
-use crate::types::{EventId, MessageId};
+use crate::events::domain::{Attempt, AttemptCollection, AttemptLog, Event, Message};
+use crate::sender::Status;
+use crate::types::{EndpointId, EventId, MessageId};
 
 pub struct EventStorage {
     pool: PgPool,
@@ -16,6 +16,7 @@ impl EventStorage {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
+
     pub async fn save(&self, event: Event) {
         query(
             r#"
@@ -45,39 +46,94 @@ impl EventStorage {
     }
 }
 
-pub trait MessageStorage {
-    fn save(&self, message: Message);
-
-    fn get(&self, message_id: MessageId) -> Result<Message, Error>;
+pub struct MessageStorage {
+    pool: PgPool,
 }
 
-pub struct InMemoryMessageStorage {
-    data: Mutex<Vec<Message>>,
-}
+impl MessageStorage {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
 
-impl InMemoryMessageStorage {
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        Self {
-            data: Mutex::new(vec![]),
+    pub async fn save(&self, message: Message) {
+        let mut tx = self.pool.begin().await.unwrap();
+
+        query(
+            r#"
+            INSERT INTO messages (id, event_id, endpoint_id)
+            VALUES ($1, $2, $3)
+            ON CONFLICT DO NOTHING
+        "#,
+        )
+        .bind(message.id)
+        .bind(message.event_id)
+        .bind(message.endpoint_id)
+        .execute(&mut *tx)
+        .await
+        .unwrap();
+
+        // todo optimize
+        for attempt in message.attempts() {
+            query(
+                r#"
+            INSERT INTO attempts (message_id, attempt, status_numeric, status_unknown)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT DO NOTHING
+        "#,
+            )
+            .bind(attempt.message_id())
+            .bind(attempt.attempt_id() as i16)
+            .bind(match attempt.status() {
+                Status::Numeric(val) => Some(val as i16),
+                Status::Unknown(_) => None,
+            })
+            .bind(match attempt.status() {
+                Status::Numeric(_) => None,
+                Status::Unknown(val) => Some(val),
+            })
+            .execute(&mut *tx)
+            .await
+            .unwrap();
         }
-    }
-}
 
-impl MessageStorage for InMemoryMessageStorage {
-    fn save(&self, message: Message) {
-        let mut data = self.data.lock().unwrap();
-
-        data.push(message);
+        tx.commit().await.unwrap();
     }
 
-    fn get(&self, message_id: MessageId) -> Result<Message, Error> {
-        let data = self.data.lock().unwrap();
+    pub async fn get(&self, message_id: MessageId) -> Result<Message, Error> {
+        let row = query(
+            r#"
+            SELECT * FROM messages WHERE id = $1
+        "#,
+        )
+        .bind(message_id)
+        .fetch_one(&self.pool)
+        .await?;
 
-        data.clone()
-            .into_iter()
-            .find(|message| message.id.eq(&message_id))
-            .ok_or_else(|| EntityNotFound("Message not found".to_string()))
+        let event_id: EventId = row.try_get("event_id")?;
+        let endpoint_id: EndpointId = row.try_get("endpoint_id")?;
+
+        let attempt_rows = query(
+            r#"
+            SELECT * FROM attempts WHERE message_id = $1
+        "#,
+        )
+        .bind(message_id)
+        .fetch_all(&self.pool)
+        .await
+        .unwrap_or_default();
+
+        let attempts: Vec<Attempt> = attempt_rows
+            .iter()
+            .map(|p| Attempt::from_row(p).unwrap())
+            .collect();
+        let collection = AttemptCollection::from((message_id, attempts));
+
+        Ok(Message {
+            id: message_id,
+            endpoint_id,
+            event_id,
+            attempts: collection,
+        })
     }
 }
 

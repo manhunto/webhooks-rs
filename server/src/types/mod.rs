@@ -123,6 +123,27 @@ make_ksuid!(MessageId, "msg");
 make_ksuid!(ApplicationId, "app");
 make_ksuid!(EndpointId, "ep");
 
+#[derive(Debug, Clone, PartialEq, Copy, Eq)]
+pub struct AttemptId(MessageId, u16);
+
+impl AttemptId {
+    pub fn new(message_id: MessageId, id: u16) -> Result<Self, String> {
+        if id < 1 {
+            return Err(format!("Id should be greater than 0. Was {}", id));
+        }
+
+        Ok(Self(message_id, id))
+    }
+
+    pub fn attempt_no(&self) -> u16 {
+        self.1
+    }
+
+    pub fn message_id(&self) -> MessageId {
+        self.0
+    }
+}
+
 #[cfg(test)]
 mod ksuid_tests {
     use std::str::FromStr;

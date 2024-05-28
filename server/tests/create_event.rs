@@ -1,7 +1,10 @@
+use std::time::Duration;
+
 use mockito::Matcher::Json;
 use mockito::Server;
 use reqwest::Client;
 use serde_json::{json, Value};
+use tokio::time::sleep;
 
 use server::configuration::domain::Topic;
 use server::types::EventId;
@@ -16,13 +19,13 @@ async fn event_is_created_and_dispatched() {
     let server = run_test_server_and_dispatcher!();
 
     let mut destination_server = Server::new_async().await;
-    let _mock = destination_server
+    let mock = destination_server
         .mock("POST", "/some_endpoint")
-        .match_body(Json(json!({"payload": {
+        .match_body(Json(json!({
            "nested": {
               "foo": "bar"
            }
-        }})))
+        })))
         .with_status(201)
         .create_async()
         .await;
@@ -71,7 +74,6 @@ async fn event_is_created_and_dispatched() {
     assert_eq!(Topic::try_from("contact.created").unwrap(), event.topic);
     println!("{:?}", event);
 
-    // mock.assert_async().await;
-
-    // todo: assert, was message dispatched to rabbit? or maybe consume it.. and try to check if was dispatched on server
+    sleep(Duration::from_millis(10)).await; // todo how to remove sleep? consume it once?
+    mock.assert_async().await;
 }

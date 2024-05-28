@@ -2,6 +2,8 @@ use std::time::{Duration, Instant};
 
 use log::debug;
 use reqwest::StatusCode;
+use sqlx::postgres::PgRow;
+use sqlx::{Error, FromRow, Row};
 use url::Url;
 
 use crate::events::domain::Payload;
@@ -11,6 +13,22 @@ use crate::sender::Status::{Numeric, Unknown};
 pub enum Status {
     Numeric(u16),
     Unknown(String),
+}
+
+impl FromRow<'_, PgRow> for Status {
+    fn from_row(row: &'_ PgRow) -> Result<Self, Error> {
+        let numeric: Option<i16> = row.try_get("status_numeric")?;
+        if let Some(val) = numeric {
+            return Ok(Numeric(val as u16));
+        }
+
+        let unknown: Option<String> = row.try_get("status_unknown")?;
+        if let Some(val) = unknown {
+            return Ok(Unknown(val));
+        }
+
+        unreachable!("Could not encode status from postgres")
+    }
 }
 
 pub struct SentResult {

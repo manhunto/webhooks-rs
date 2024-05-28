@@ -52,7 +52,7 @@ pub async fn create_event_handler(
 
         let msg = Message::from((event.clone(), endpoint.clone()));
 
-        storage.messages.save(msg.clone());
+        storage.messages.save(msg.clone()).await;
 
         let cmd = SentMessage::new(msg.id);
         let message = AsyncMessage::SentMessage(cmd);

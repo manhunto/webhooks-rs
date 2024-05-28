@@ -54,6 +54,10 @@ impl EndpointStorage {
             r#"
         INSERT INTO endpoints (id, app_id, url, topics, status)
         VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (id) DO UPDATE 
+            SET url = EXCLUDED.url,
+                topics = EXCLUDED.topics,
+                status = EXCLUDED.status
         "#,
         )
         .bind(endpoint.id)

@@ -5,12 +5,12 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
 use sqlx::postgres::PgRow;
-use sqlx::{FromRow, Row};
+use sqlx::{Error, FromRow, Row};
 
 use crate::configuration::domain::{Endpoint, Topic};
 use crate::sender::{SentResult, Status};
 use crate::time::Clock;
-use crate::types::{ApplicationId, EndpointId, EventId, MessageId};
+use crate::types::{ApplicationId, AttemptId, EndpointId, EventId, MessageId};
 
 #[derive(Debug, Clone)]
 pub struct Payload {
@@ -99,7 +99,7 @@ pub struct Message {
     pub id: MessageId,
     pub event_id: EventId,
     pub endpoint_id: EndpointId,
-    attempts: AttemptCollection,
+    pub attempts: AttemptCollection,
 }
 
 impl From<(Event, Endpoint)> for Message {
@@ -112,40 +112,48 @@ impl From<(Event, Endpoint)> for Message {
 
 impl Message {
     fn new(event_id: EventId, endpoint_id: EndpointId) -> Self {
+        let id = MessageId::new();
+
         Self {
-            id: MessageId::new(),
+            id,
             event_id,
             endpoint_id,
-            attempts: AttemptCollection::new(),
+            attempts: AttemptCollection::new(id),
         }
     }
 
     pub fn record_attempt(&mut self, result: SentResult, processing_time: Duration) -> AttemptLog {
         let id = self.attempts.push(result.status);
 
-        AttemptLog::new(
-            self.id,
-            id,
-            processing_time,
-            result.response_time,
-            result.body,
-        )
+        AttemptLog::new(id, processing_time, result.response_time, result.body)
+    }
+
+    pub fn attempts(&self) -> Vec<Attempt> {
+        self.attempts.all()
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct Attempt {
-    id: u16,
+pub struct Attempt {
+    id: AttemptId,
     status: Status,
 }
 
 impl Attempt {
-    fn new(id: u16, status: Status) -> Result<Self, String> {
-        if id < 1 {
-            return Err(format!("Id should be greater than 0. Was {}", id));
-        }
+    pub fn attempt_id(&self) -> u16 {
+        self.id.attempt_no()
+    }
 
-        Ok(Self { id, status })
+    pub fn message_id(&self) -> MessageId {
+        self.id.message_id()
+    }
+
+    pub fn status(&self) -> Status {
+        self.status.clone()
+    }
+
+    fn new(id: AttemptId, status: Status) -> Self {
+        Self { id, status }
     }
 
     fn is_delivered(&self) -> bool {
@@ -156,22 +164,36 @@ impl Attempt {
     }
 }
 
+impl FromRow<'_, PgRow> for Attempt {
+    fn from_row(row: &'_ PgRow) -> Result<Self, Error> {
+        let message_id: MessageId = row.try_get("message_id")?;
+        let attempt_no: i16 = row.try_get("attempt")?;
+        let id = AttemptId::new(message_id, attempt_no as u16).unwrap();
+
+        let status: Status = Status::from_row(row)?;
+
+        Ok(Self { id, status })
+    }
+}
+
 #[derive(Debug, Clone)]
-struct AttemptCollection {
+pub struct AttemptCollection {
+    message_id: MessageId,
     attempts: Vec<Attempt>,
 }
 
 impl AttemptCollection {
-    fn new() -> Self {
+    fn new(message_id: MessageId) -> Self {
         Self {
+            message_id,
             attempts: Vec::new(),
         }
     }
 
     // todo add clock here or to logs?
     // fixme: improve returning id
-    fn push(&mut self, status: Status) -> u16 {
-        let attempt = Attempt::new(self.attempts.len() as u16 + 1, status).unwrap();
+    fn push(&mut self, status: Status) -> AttemptId {
+        let attempt = Attempt::new(self.next_id(), status);
 
         if self.attempts.iter().any(|a| a.is_delivered()) {
             panic!("Could not push to the attempt collection when was delivered");
@@ -183,20 +205,30 @@ impl AttemptCollection {
         id
     }
 
-    #[cfg(test)]
+    fn next_id(&self) -> AttemptId {
+        AttemptId::new(self.message_id, self.attempts.len() as u16 + 1).unwrap()
+    }
+
     fn all(&self) -> Vec<Attempt> {
         let mut vec = self.attempts.clone();
-        vec.sort_unstable_by(|a, b| a.id.cmp(&b.id));
+        vec.sort_unstable_by(|a, b| a.id.attempt_no().cmp(&b.id.attempt_no()));
 
         vec
     }
 }
 
+impl From<(MessageId, Vec<Attempt>)> for AttemptCollection {
+    fn from(value: (MessageId, Vec<Attempt>)) -> Self {
+        Self {
+            message_id: value.0,
+            attempts: value.1,
+        }
+    }
+}
+
 pub struct AttemptLog {
     #[allow(dead_code)]
-    message_id: MessageId,
-    #[allow(dead_code)]
-    attempt_id: u16,
+    attempt_id: AttemptId,
     #[allow(dead_code)]
     processing_time: Duration,
     #[allow(dead_code)]
@@ -207,14 +239,12 @@ pub struct AttemptLog {
 
 impl AttemptLog {
     pub fn new(
-        message_id: MessageId,
-        attempt_id: u16,
+        attempt_id: AttemptId,
         processing_time: Duration,
         response_time: Duration,
         response_body: Option<String>,
     ) -> Self {
         Self {
-            message_id,
             attempt_id,
             processing_time,
             response_time,
@@ -284,11 +314,14 @@ mod attempt_test {
 
     use crate::events::domain::Attempt;
     use crate::sender::Status;
+    use crate::types::{AttemptId, MessageId};
 
     #[test]
     #[should_panic]
     fn attempt_id_should_be_greater_than_0() {
-        Attempt::new(0, Status::Numeric(200)).unwrap();
+        let attempt_id = AttemptId::new(MessageId::new(), 0).unwrap();
+
+        Attempt::new(attempt_id, Status::Numeric(200));
     }
 
     #[test_case(Status::Numeric(200), true)]
@@ -299,7 +332,8 @@ mod attempt_test {
     #[test_case(Status::Numeric(502), false)]
     #[test_case(Status::Unknown("test".to_string()), false)]
     fn attempt_is_delivered(status: Status, expected: bool) {
-        let sut = Attempt::new(1, status).unwrap();
+        let attempt_id = AttemptId::new(MessageId::new(), 1).unwrap();
+        let sut = Attempt::new(attempt_id, status);
 
         assert_eq!(expected, sut.is_delivered());
     }
@@ -309,10 +343,11 @@ mod attempt_test {
 mod attempt_collection_test {
     use crate::events::domain::AttemptCollection;
     use crate::sender::Status::Numeric;
+    use crate::types::MessageId;
 
     #[test]
     fn get_attempts_from_collection() {
-        let mut sut = AttemptCollection::new();
+        let mut sut = AttemptCollection::new(MessageId::new());
 
         sut.push(Numeric(504));
         sut.push(Numeric(502));
@@ -333,9 +368,27 @@ mod attempt_collection_test {
     #[test]
     #[should_panic(expected = "Could not push to the attempt collection when was delivered")]
     fn cannot_push_attempt_when_collection_is_delivered() {
-        let mut sut = AttemptCollection::new();
+        let mut sut = AttemptCollection::new(MessageId::new());
 
         sut.push(Numeric(200));
         sut.push(Numeric(200));
+    }
+
+    #[test]
+    fn should_have_ordered_unique_attempts() {
+        let mut sut = AttemptCollection::new(MessageId::new());
+
+        sut.push(Numeric(500));
+        sut.push(Numeric(501));
+        sut.push(Numeric(502));
+        sut.push(Numeric(200));
+
+        let vec = sut.all();
+        let mut iter = vec.iter();
+
+        assert_eq!(1, iter.next().unwrap().id.attempt_no());
+        assert_eq!(2, iter.next().unwrap().id.attempt_no());
+        assert_eq!(3, iter.next().unwrap().id.attempt_no());
+        assert_eq!(4, iter.next().unwrap().id.attempt_no());
     }
 }

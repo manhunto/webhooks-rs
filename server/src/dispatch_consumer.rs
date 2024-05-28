@@ -53,7 +53,7 @@ pub async fn consume(
 
         info!("message consumed: {:?}", cmd);
 
-        let msg = storage.messages.get(cmd.msg_id());
+        let msg = storage.messages.get(cmd.msg_id()).await;
         if msg.is_err() {
             error!(
                 "Message {} doesn't exist and cannot be dispatched",
@@ -114,13 +114,13 @@ pub async fn consume(
         match circuit_breaker.call(&key, || sender.send()).await {
             Ok(res) => {
                 let log = msg.record_attempt(res, processing_time);
-                storage.messages.save(msg);
+                storage.messages.save(msg).await;
                 storage.attempt_log.save(log);
             }
             Err(err) => match err {
                 Error::Closed(res) => {
                     let log = msg.record_attempt(res, processing_time);
-                    storage.messages.save(msg);
+                    storage.messages.save(msg).await;
                     storage.attempt_log.save(log);
 
                     let mut endpoint = endpoint;
@@ -133,7 +133,7 @@ pub async fn consume(
                 }
                 Error::Open(res) => {
                     let log = msg.record_attempt(res, processing_time);
-                    storage.messages.save(msg);
+                    storage.messages.save(msg).await;
                     storage.attempt_log.save(log);
 
                     if retry_policy.is_retryable(cmd.attempt) {
