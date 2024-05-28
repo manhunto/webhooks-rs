@@ -73,6 +73,6 @@ async fn event_is_created_and_dispatched() {
     );
     assert_eq!(Topic::try_from("contact.created").unwrap(), event.topic);
 
-    sleep(Duration::from_millis(10)).await; // todo how to remove sleep? consume it once?
+    sleep(Duration::from_millis(100)).await; // todo how to remove sleep? consume it once?
     mock.assert_async().await;
 }
