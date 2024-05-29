@@ -183,6 +183,28 @@ macro_rules! run_test_server_and_dispatcher {
     }};
 }
 
+#[allow(unused_macros)]
+macro_rules! assert_mock_with_retry {
+    ($mock: ident) => {{
+        let mut attempt: u8 = 1;
+        const MAX_ATTEMPTS: u8 = 10;
+        let mock: mockito::Mock = $mock;
+
+        while !mock.matched_async().await && attempt <= MAX_ATTEMPTS {
+            let delay = std::time::Duration::from_millis((10 * attempt).into());
+
+            println!("Delay for asserting mockito mock server: {:?}", delay);
+
+            tokio::time::sleep(delay).await;
+            attempt += 1;
+        }
+
+        mock.assert_async().await;
+    }};
+}
+
+#[allow(unused_imports)]
+pub(crate) use assert_mock_with_retry;
 #[allow(unused_imports)]
 pub(crate) use run_test_server;
 #[allow(unused_imports)]

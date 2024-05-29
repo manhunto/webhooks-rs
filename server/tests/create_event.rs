@@ -1,15 +1,14 @@
-use std::time::Duration;
-
 use mockito::Matcher::Json;
 use mockito::Server;
 use reqwest::Client;
 use serde_json::{json, Value};
-use tokio::time::sleep;
 
 use server::configuration::domain::Topic;
 use server::types::EventId;
 
-use crate::common::{run_test_server_and_dispatcher, Given, TestEnvironment};
+use crate::common::{
+    assert_mock_with_retry, run_test_server_and_dispatcher, Given, TestEnvironment,
+};
 
 mod common;
 
@@ -72,7 +71,5 @@ async fn event_is_created_and_dispatched() {
         serde_json::to_value(event.payload.clone()).unwrap()
     );
     assert_eq!(Topic::try_from("contact.created").unwrap(), event.topic);
-
-    sleep(Duration::from_millis(100)).await; // todo how to remove sleep? consume it once?
-    mock.assert_async().await;
+    assert_mock_with_retry!(mock);
 }
