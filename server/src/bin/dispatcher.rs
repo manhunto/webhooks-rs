@@ -16,5 +16,5 @@ async fn main() {
 
     let amqp_config = AMQPConfig::init_from_env().unwrap();
 
-    run_dispatcher(pool, amqp_config).await
+    run_dispatcher(pool, amqp_config).await;
 }

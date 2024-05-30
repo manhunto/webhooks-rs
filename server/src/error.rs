@@ -23,12 +23,11 @@ pub enum ResponseError {
 impl Display for ResponseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let msg = match self {
-            ResponseError::NotFound(val) => val,
-            ResponseError::BadRequest(val) => val,
+            ResponseError::NotFound(val) | ResponseError::BadRequest(val) => val,
             ResponseError::InternalError => "",
         };
 
-        write!(f, "{}", msg)
+        write!(f, "{msg}")
     }
 }
 

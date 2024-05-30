@@ -13,16 +13,17 @@ pub struct EventStorage {
 }
 
 impl EventStorage {
+    #[must_use]
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
     pub async fn save(&self, event: Event) {
         query(
-            r#"
+            r"
             INSERT INTO events (id, app_id, payload, topic, created_at)
             VALUES ($1, $2, $3, $4, $5)
-        "#,
+        ",
         )
         .bind(event.id)
         .bind(event.app_id)
@@ -36,9 +37,9 @@ impl EventStorage {
 
     pub async fn get(&self, event_id: EventId) -> Result<Event, Error> {
         Ok(query_as::<_, Event>(
-            r#"
+            r"
             SELECT * FROM events WHERE id = $1
-        "#,
+        ",
         )
         .bind(event_id)
         .fetch_one(&self.pool)
@@ -59,11 +60,11 @@ impl MessageStorage {
         let mut tx = self.pool.begin().await.unwrap();
 
         query(
-            r#"
+            r"
             INSERT INTO messages (id, event_id, endpoint_id)
             VALUES ($1, $2, $3)
             ON CONFLICT DO NOTHING
-        "#,
+        ",
         )
         .bind(message.id)
         .bind(message.event_id)
@@ -75,11 +76,11 @@ impl MessageStorage {
         // todo optimize
         for attempt in message.attempts() {
             query(
-                r#"
+                r"
             INSERT INTO attempts (message_id, attempt, status_numeric, status_unknown)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT DO NOTHING
-        "#,
+        ",
             )
             .bind(attempt.message_id())
             .bind(attempt.attempt_id() as i16)
@@ -101,9 +102,9 @@ impl MessageStorage {
 
     pub async fn get(&self, message_id: MessageId) -> Result<Message, Error> {
         let row = query(
-            r#"
+            r"
             SELECT * FROM messages WHERE id = $1
-        "#,
+        ",
         )
         .bind(message_id)
         .fetch_one(&self.pool)
@@ -113,9 +114,9 @@ impl MessageStorage {
         let endpoint_id: EndpointId = row.try_get("endpoint_id")?;
 
         let attempt_rows = query(
-            r#"
+            r"
             SELECT * FROM attempts WHERE message_id = $1
-        "#,
+        ",
         )
         .bind(message_id)
         .fetch_all(&self.pool)
@@ -147,6 +148,7 @@ pub struct InMemoryAttemptLogStorage {
 
 impl InMemoryAttemptLogStorage {
     #[allow(clippy::new_without_default)]
+    #[must_use]
     pub fn new() -> Self {
         Self {
             data: Mutex::new(vec![]),

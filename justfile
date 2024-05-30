@@ -55,6 +55,9 @@ test:
 clippy:
     cargo clippy --all-targets --all-features -- -D warnings
 
+clippy-pedantic:
+    cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
+
 udeps:
     cargo +nightly udeps --all-targets
 
@@ -67,9 +70,12 @@ docker-up *OPTIONS:
 docker-down:
     docker compose down --remove-orphans
 
-check: build clippy test
-    cargo sort --workspace
+check:
+    just build
     cargo fmt --check --all
+    just clippy
+    just test
+    cargo sort --workspace
 
 init:
     just docker-up --detach

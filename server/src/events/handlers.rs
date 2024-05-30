@@ -37,7 +37,7 @@ pub async fn create_event_handler(
     let endpoints_count = endpoints.len();
 
     let active_endpoints: Vec<Endpoint> =
-        endpoints.into_iter().filter(|en| en.is_active()).collect();
+        endpoints.into_iter().filter(Endpoint::is_active).collect();
 
     debug!(
         "in app {} - {} ({}) endpoints found for event {}",
@@ -59,7 +59,7 @@ pub async fn create_event_handler(
 
         dispatcher.publish(message).await;
 
-        debug!("Message {} published on the queue", msg.id)
+        debug!("Message {} published on the queue", msg.id);
     }
 
     Ok(HttpResponse::Ok().json(CreateEventResponse::from(event)))

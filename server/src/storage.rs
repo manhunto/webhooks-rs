@@ -14,6 +14,7 @@ pub struct Storage {
 }
 
 impl Storage {
+    #[must_use]
     pub fn new(pool: PgPool) -> Self {
         Self {
             applications: ApplicationStorage::new(pool.clone()),

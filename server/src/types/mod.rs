@@ -7,12 +7,14 @@ macro_rules! make_ksuid {
             const PREFIX: &'static str = $prefix;
             const TERMINATOR: char = '_';
 
+            #[must_use]
             pub fn new() -> Self {
                 use svix_ksuid::{Ksuid, KsuidLike};
 
                 Self (Ksuid::new(None, None).to_base62().as_bytes().try_into().unwrap())
             }
 
+            #[must_use]
             pub fn to_base62(self) -> String {
                 String::from_utf8_lossy(&self.0).to_string()
             }
@@ -129,16 +131,18 @@ pub struct AttemptId(MessageId, u16);
 impl AttemptId {
     pub fn new(message_id: MessageId, id: u16) -> Result<Self, String> {
         if id < 1 {
-            return Err(format!("Id should be greater than 0. Was {}", id));
+            return Err(format!("Id should be greater than 0. Was {id}"));
         }
 
         Ok(Self(message_id, id))
     }
 
+    #[must_use]
     pub fn attempt_no(&self) -> u16 {
         self.1
     }
 
+    #[must_use]
     pub fn message_id(&self) -> MessageId {
         self.0
     }

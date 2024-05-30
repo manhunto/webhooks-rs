@@ -52,6 +52,7 @@ pub struct Event {
 }
 
 impl Event {
+    #[must_use]
     pub fn new(app_id: ApplicationId, payload: Payload, topic: Topic, clock: &Clock) -> Self {
         Self {
             id: EventId::new(),
@@ -62,6 +63,7 @@ impl Event {
         }
     }
 
+    #[must_use]
     pub fn calculate_processing_time(&self, clock: &Clock) -> Duration {
         let now = clock.now();
         if now < self.created_at {
@@ -128,6 +130,7 @@ impl Message {
         AttemptLog::new(id, processing_time, result.response_time, result.body)
     }
 
+    #[must_use]
     pub fn attempts(&self) -> Vec<Attempt> {
         self.attempts.all()
     }
@@ -140,14 +143,17 @@ pub struct Attempt {
 }
 
 impl Attempt {
+    #[must_use]
     pub fn attempt_id(&self) -> u16 {
         self.id.attempt_no()
     }
 
+    #[must_use]
     pub fn message_id(&self) -> MessageId {
         self.id.message_id()
     }
 
+    #[must_use]
     pub fn status(&self) -> Status {
         self.status.clone()
     }
@@ -195,7 +201,7 @@ impl AttemptCollection {
     fn push(&mut self, status: Status) -> AttemptId {
         let attempt = Attempt::new(self.next_id(), status);
 
-        if self.attempts.iter().any(|a| a.is_delivered()) {
+        if self.attempts.iter().any(Attempt::is_delivered) {
             panic!("Could not push to the attempt collection when was delivered");
         }
 
@@ -238,6 +244,7 @@ pub struct AttemptLog {
 }
 
 impl AttemptLog {
+    #[must_use]
     pub fn new(
         attempt_id: AttemptId,
         processing_time: Duration,

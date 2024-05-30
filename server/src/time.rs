@@ -7,6 +7,7 @@ pub enum Clock {
 }
 
 impl Clock {
+    #[must_use]
     pub fn now(&self) -> DateTime<Utc> {
         match self {
             Clock::Chrono => Utc::now(),
@@ -15,6 +16,7 @@ impl Clock {
         }
     }
 
+    #[must_use]
     pub fn chrono() -> Self {
         Self::Chrono
     }

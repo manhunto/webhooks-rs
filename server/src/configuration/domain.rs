@@ -63,7 +63,7 @@ impl Display for EndpointStatus {
             EndpointStatus::EnabledManually => "enabled_manually",
         };
 
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 
@@ -77,7 +77,7 @@ impl TryFrom<String> for EndpointStatus {
             "disabled_manually" => Ok(EndpointStatus::DisabledManually),
             "disabled_failing" => Ok(EndpointStatus::DisabledFailing),
             "enabled_manually" => Ok(EndpointStatus::EnabledManually),
-            _ => Err(format!("Unexpected endpoint status: {}", value)),
+            _ => Err(format!("Unexpected endpoint status: {value}")),
         }
     }
 }
@@ -92,10 +92,10 @@ pub struct Endpoint {
 }
 
 impl Endpoint {
-    pub fn new(url: String, app_id: ApplicationId, topics: TopicsList) -> Self {
+    pub fn new(url: &str, app_id: ApplicationId, topics: TopicsList) -> Self {
         Self {
             id: EndpointId::new(),
-            url: Url::parse(url.as_str()).unwrap(),
+            url: Url::parse(url).unwrap(),
             topics,
             app_id,
             status: EndpointStatus::Initial,
@@ -225,7 +225,7 @@ impl TryFrom<Vec<String>> for TopicsList {
 
 impl From<Vec<&'static str>> for TopicsList {
     fn from(value: Vec<&'static str>) -> Self {
-        let vec: Vec<String> = value.into_iter().map(|s| s.to_string()).collect();
+        let vec: Vec<String> = value.into_iter().map(ToString::to_string).collect();
 
         Self::try_from(vec).unwrap()
     }
@@ -293,7 +293,7 @@ mod endpoint_tests {
     impl EndpointObjectMother {
         fn init_new() -> Endpoint {
             Endpoint::new(
-                "https://localhost".to_string(),
+                "https://localhost",
                 ApplicationId::new(),
                 TopicsList::try_from(vec![String::from("test")]).unwrap(),
             )

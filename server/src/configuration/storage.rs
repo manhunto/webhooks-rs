@@ -16,10 +16,10 @@ impl ApplicationStorage {
 
     pub async fn save(&self, app: Application) {
         query(
-            r#"
+            r"
             INSERT INTO applications (id, name)
             VALUES ($1, $2)
-        "#,
+        ",
         )
         .bind(app.id)
         .bind(app.name)
@@ -30,9 +30,9 @@ impl ApplicationStorage {
 
     pub async fn get(&self, app_id: &ApplicationId) -> Result<Application, Error> {
         Ok(query_as::<_, Application>(
-            r#"
+            r"
             SELECT * FROM applications WHERE id = $1
-            "#,
+            ",
         )
         .bind(app_id)
         .fetch_one(&self.pool)
@@ -51,14 +51,14 @@ impl EndpointStorage {
 
     pub async fn save(&self, endpoint: Endpoint) {
         query(
-            r#"
+            r"
         INSERT INTO endpoints (id, app_id, url, topics, status)
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (id) DO UPDATE 
             SET url = EXCLUDED.url,
                 topics = EXCLUDED.topics,
                 status = EXCLUDED.status
-        "#,
+        ",
         )
         .bind(endpoint.id)
         .bind(endpoint.app_id)
@@ -72,9 +72,9 @@ impl EndpointStorage {
 
     pub async fn for_topic(&self, application_id: &ApplicationId, topic: &Topic) -> Vec<Endpoint> {
         let endpoints = query_as::<_, Endpoint>(
-            r#"
+            r"
             SELECT * FROM endpoints WHERE app_id = $1
-        "#,
+        ",
         )
         .bind(application_id)
         .fetch_all(&self.pool)
@@ -89,9 +89,9 @@ impl EndpointStorage {
 
     pub async fn get(&self, endpoint_id: &EndpointId) -> Result<Endpoint, Error> {
         Ok(query_as::<_, Endpoint>(
-            r#"
+            r"
             SELECT * FROM endpoints WHERE id = $1
-        "#,
+        ",
         )
         .bind(endpoint_id)
         .fetch_one(&self.pool)

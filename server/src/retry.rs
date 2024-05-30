@@ -14,6 +14,7 @@ pub struct Retry {
 }
 
 impl Retry {
+    #[must_use]
     fn new(
         should_retry_policy: Box<ShouldRetryPolicyType>,
         delay_retry_policy: Box<DelayRetryPolicyType>,
@@ -24,10 +25,12 @@ impl Retry {
         }
     }
 
+    #[must_use]
     pub fn is_retryable(&self, attempt: usize) -> bool {
         self.should_retry_policy.is_retryable(attempt)
     }
 
+    #[must_use]
     pub fn get_waiting_time(&self, attempt: usize) -> Duration {
         self.delay_retry_policy.get_waiting_time(attempt)
     }
@@ -64,7 +67,7 @@ struct ExponentialRetryPolicy {
 }
 
 impl ExponentialRetryPolicy {
-    fn new(config: ExponentialConfig) -> Self {
+    fn new(config: &ExponentialConfig) -> Self {
         Self {
             delay: config.delay,
             multiplier: config.multiplier,
@@ -135,7 +138,7 @@ struct ConstantRetryPolicy {
 }
 
 impl ConstantRetryPolicy {
-    fn new(config: ConstantConfig) -> Self {
+    fn new(config: &ConstantConfig) -> Self {
         Self {
             delay: config.delay,
         }
@@ -184,6 +187,7 @@ pub struct RetryPolicyBuilder {
 }
 
 impl RetryPolicyBuilder {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             max_retries: None,
@@ -222,8 +226,8 @@ impl RetryPolicyBuilder {
         }
 
         let mut delay_policy: Box<DelayRetryPolicyType> = match self.config.clone().unwrap() {
-            Exponential(config) => Box::new(ExponentialRetryPolicy::new(config)),
-            Constant(config) => Box::new(ConstantRetryPolicy::new(config)),
+            Exponential(config) => Box::new(ExponentialRetryPolicy::new(&config)),
+            Constant(config) => Box::new(ConstantRetryPolicy::new(&config)),
         };
 
         if let Some(factor) = self.random_factor {
@@ -271,7 +275,7 @@ mod tests {
         result: u64,
     ) {
         let config = ExponentialConfig::new(multiplier, Duration::from_secs(delay_in_secs));
-        let sut = ExponentialRetryPolicy::new(config);
+        let sut = ExponentialRetryPolicy::new(&config);
 
         assert_eq!(Duration::from_secs(result), sut.get_waiting_time(attempt));
     }
@@ -300,7 +304,7 @@ mod tests {
         factor: f64,
     ) -> RandomizeDecoratedRetryPolicy {
         let config = ConstantConfig::new(Duration::from_millis(delay));
-        let constant = Box::new(ConstantRetryPolicy::new(config));
+        let constant = Box::new(ConstantRetryPolicy::new(&config));
 
         RandomizeDecoratedRetryPolicy::new(random_generator, constant, factor)
     }

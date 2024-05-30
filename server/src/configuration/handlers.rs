@@ -34,7 +34,7 @@ pub async fn create_endpoint_handler(
     let url = request.url.clone();
     let topics: TopicsList = request.topics.clone().into_iter().collect();
 
-    let endpoint = Endpoint::new(url, app.id, topics);
+    let endpoint = Endpoint::new(&url, app.id, topics);
 
     storage.endpoints.save(endpoint.clone()).await;
 

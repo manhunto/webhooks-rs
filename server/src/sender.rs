@@ -72,7 +72,7 @@ impl Sender {
         let start = Instant::now();
 
         let response = reqwest::Client::new()
-            .post(self.url.to_owned())
+            .post(self.url.clone())
             .json(&self.payload)
             .send()
             .await;
@@ -95,19 +95,19 @@ impl Sender {
                 let status = status_code.as_u16();
                 let body = res.text().await.unwrap();
 
-                self.log_error_response(Some(status_code), body.clone());
+                Self::log_error_response(Some(status_code), &body.clone());
 
                 Err(SentResult::with_body(Numeric(status), end, body))
             }
             Err(err) => {
-                self.log_error_response(err.status(), err.to_string());
+                Self::log_error_response(err.status(), &err.to_string());
 
                 Err(SentResult::without_body(Unknown(err.to_string()), end))
             }
         }
     }
 
-    fn log_error_response(&self, status_code: Option<StatusCode>, response: String) {
+    fn log_error_response(status_code: Option<StatusCode>, response: &str) {
         let status: String = status_code.map_or(String::from("-"), |s| s.to_string());
 
         debug!("Error response! Status: {}, Error: {}", status, response);
