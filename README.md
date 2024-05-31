@@ -31,13 +31,13 @@ an application that is high-performing, configurable and scalable.
 - [x] Retry policy for failed messages
 - [x] Endpoint can be disabled manually
 - [x] Circuit breaker
-- [ ] Persistence
+- [x] Persistence
 - [ ] SDK
 - [ ] CLI
 - [ ] Dockerized
 - [ ] Documentation
 - [ ] Integration tests
-- [ ] Error handling and validation 
+- [ ] Error handling and validation
 
 ### Roadmap
 
