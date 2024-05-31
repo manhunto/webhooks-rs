@@ -115,13 +115,13 @@ pub async fn consume(
             Ok(res) => {
                 let log = msg.record_attempt(res, processing_time);
                 storage.messages.save(msg).await;
-                storage.attempt_log.save(log);
+                storage.attempt_log.save(log).await;
             }
             Err(err) => match err {
                 Error::Closed(res) => {
                     let log = msg.record_attempt(res, processing_time);
                     storage.messages.save(msg).await;
-                    storage.attempt_log.save(log);
+                    storage.attempt_log.save(log).await;
 
                     let mut endpoint = endpoint;
                     let endpoint_id = endpoint.id;
@@ -134,7 +134,7 @@ pub async fn consume(
                 Error::Open(res) => {
                     let log = msg.record_attempt(res, processing_time);
                     storage.messages.save(msg).await;
-                    storage.attempt_log.save(log);
+                    storage.attempt_log.save(log).await;
 
                     if retry_policy.is_retryable(cmd.attempt) {
                         let cmd_to_retry = cmd.with_increased_attempt();

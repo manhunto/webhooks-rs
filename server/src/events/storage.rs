@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-
 use serde_json::json;
 use sqlx::{query, query_as, FromRow, PgPool, Row};
 
@@ -138,28 +136,32 @@ impl MessageStorage {
     }
 }
 
-pub trait AttemptLogStorage {
-    fn save(&self, attempt_log: AttemptLog);
+pub struct AttemptLogStorage {
+    pool: PgPool,
 }
 
-pub struct InMemoryAttemptLogStorage {
-    data: Mutex<Vec<AttemptLog>>,
-}
-
-impl InMemoryAttemptLogStorage {
-    #[allow(clippy::new_without_default)]
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            data: Mutex::new(vec![]),
-        }
+impl AttemptLogStorage {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
-}
 
-impl AttemptLogStorage for InMemoryAttemptLogStorage {
-    fn save(&self, attempt_log: AttemptLog) {
-        let mut data = self.data.lock().unwrap();
+    pub async fn save(&self, attempt_log: AttemptLog) {
+        let processing_time = attempt_log.processing_time();
+        let response_time = attempt_log.response_time();
 
-        data.push(attempt_log);
+        query(
+            r"
+            INSERT INTO attempt_logs (message_id, attempt, processing_time, response_time, response_body)
+            VALUES ($1, $2, $3, $4, $5)
+        ",
+        )
+            .bind(attempt_log.message_id())
+            .bind(attempt_log.attempt_id() as i16)
+            .bind(processing_time.as_millis() as i64)
+            .bind(response_time.as_millis() as i64)
+            .bind(attempt_log.response_body())
+            .execute(&self.pool)
+            .await
+            .unwrap();
     }
 }

@@ -234,7 +234,7 @@ impl From<(MessageId, Vec<Attempt>)> for AttemptCollection {
 
 pub struct AttemptLog {
     #[allow(dead_code)]
-    attempt_id: AttemptId,
+    id: AttemptId,
     #[allow(dead_code)]
     processing_time: Duration,
     #[allow(dead_code)]
@@ -246,17 +246,39 @@ pub struct AttemptLog {
 impl AttemptLog {
     #[must_use]
     pub fn new(
-        attempt_id: AttemptId,
+        id: AttemptId,
         processing_time: Duration,
         response_time: Duration,
         response_body: Option<String>,
     ) -> Self {
         Self {
-            attempt_id,
+            id,
             processing_time,
             response_time,
             response_body,
         }
+    }
+
+    #[must_use]
+    pub fn attempt_id(&self) -> u16 {
+        self.id.attempt_no()
+    }
+
+    #[must_use]
+    pub fn message_id(&self) -> MessageId {
+        self.id.message_id()
+    }
+
+    pub fn processing_time(&self) -> Duration {
+        self.processing_time
+    }
+
+    pub fn response_time(&self) -> Duration {
+        self.response_time
+    }
+
+    pub fn response_body(&self) -> Option<String> {
+        self.response_body.clone()
     }
 }
 
