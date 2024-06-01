@@ -8,4 +8,4 @@ edition = "2021"
 clap = { version = "4.5.4", features = ["derive"] }
 dotenv = "0.15.0"
 sdk = { path = "../sdk" }
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.38.0", features = ["full"] }
