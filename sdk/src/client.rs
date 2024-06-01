@@ -65,7 +65,7 @@ impl Client {
 
 #[derive(Debug)]
 pub struct EndpointUrl {
-    path: PathBuf,
+    path: PathBuf, // fixme: it won't work on windows
 }
 
 impl EndpointUrl {

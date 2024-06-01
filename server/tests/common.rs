@@ -265,6 +265,17 @@ impl Given {
 
         (app_id, endpoint_id)
     }
+
+    pub async fn disable_endpoint(&self, app_id: &ApplicationId, endpoint_id: &EndpointId) {
+        Client::new()
+            .post(&format!(
+                "{}/application/{}/endpoint/{}/disable",
+                self.url, app_id, endpoint_id
+            ))
+            .send()
+            .await
+            .expect("Failed to executed request");
+    }
 }
 
 impl From<&TestServer> for Given {
