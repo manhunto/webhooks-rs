@@ -88,3 +88,11 @@ impl FromStr for EndpointUrl {
         Ok(Self::new(s.to_string()))
     }
 }
+
+impl TryFrom<String> for EndpointUrl {
+    type Error = Self;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Ok(Self::new(value))
+    }
+}

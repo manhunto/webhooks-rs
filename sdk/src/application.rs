@@ -7,22 +7,22 @@ use crate::client::{Client, EndpointUrl};
 use crate::error::Error;
 
 #[derive(Deserialize, Debug, PartialEq)]
-pub struct App {
+pub struct Application {
     pub id: String,
     pub name: String,
 }
 
-pub struct Application {
+pub struct ApplicationApi {
     client: Client,
 }
 
-impl Application {
+impl ApplicationApi {
     #[must_use]
     pub fn new(client: Client) -> Self {
         Self { client }
     }
 
-    pub async fn create(&self, name: &str) -> Result<App, Error> {
+    pub async fn create(&self, name: &str) -> Result<Application, Error> {
         let body = json!({
             "name": name,
         });
@@ -38,7 +38,7 @@ mod tests {
     use mockito::Matcher::Json;
     use serde_json::json;
 
-    use crate::application::App;
+    use crate::application::Application;
     use crate::WebhooksSDK;
 
     #[tokio::test]
@@ -64,7 +64,7 @@ mod tests {
         mock.assert_async().await;
 
         assert_eq!(
-            App {
+            Application {
                 id: "app_2dSZgxc6qw0vR7hwZVXDJFleRXj".to_string(),
                 name: "dummy application".to_string(),
             },

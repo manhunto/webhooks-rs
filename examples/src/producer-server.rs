@@ -18,5 +18,12 @@ async fn main() -> Result<(), Error> {
 
     println!("App created - {:?}", app);
 
+    let endpoint = sdk
+        .endpoints()
+        .create(&app.id, "http://localhost:8080", vec!["contact.created"])
+        .await?;
+
+    println!("Endpoint created - {:?}", endpoint);
+
     Ok(())
 }
