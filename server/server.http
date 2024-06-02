@@ -1,11 +1,11 @@
 @url = http://localhost:8090
 
 ### Health check
-GET {{url}}/v1/health_check
+GET {{url}}/health_check
 Content-Type: application/json
 
 ### Create application
-POST {{url}}/v1/application
+POST {{url}}/application
 Content-Type: application/json
 
 {
@@ -17,7 +17,7 @@ Content-Type: application/json
 %}
 
 ### Create endpoint
-POST {{url}}/v1/application/{{app_id}}/endpoint
+POST {{url}}/application/{{app_id}}/endpoint
 Content-Type: application/json
 
 {
@@ -33,7 +33,7 @@ Content-Type: application/json
 %}
 
 ### Create event
-POST {{url}}/v1/application/{{app_id}}/event
+POST {{url}}/application/{{app_id}}/event
 Content-Type: application/json
 
 {
@@ -50,9 +50,9 @@ Content-Type: application/json
 }
 
 ### Disable endpoint
-POST {{url}}/v1/application/{{app_id}}/endpoint/{{endpoint_id}}/disable
+POST {{url}}/application/{{app_id}}/endpoint/{{endpoint_id}}/disable
 Content-Type: application/json
 
 ### Enable endpoint
-POST {{url}}/v1/application/{{app_id}}/endpoint/{{endpoint_id}}/enable
+POST {{url}}/application/{{app_id}}/endpoint/{{endpoint_id}}/enable
 Content-Type: application/json

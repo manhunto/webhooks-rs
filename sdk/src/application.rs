@@ -28,7 +28,7 @@ impl Application {
         });
 
         self.client
-            .post(EndpointUrl::from_str("v1/application").unwrap(), body)
+            .post(EndpointUrl::from_str("application").unwrap(), body)
             .await
     }
 }
@@ -47,7 +47,7 @@ mod tests {
         let url = server.url();
 
         let mock = server
-            .mock("POST", "/v1/application")
+            .mock("POST", "/application")
             .match_body(Json(json!({"name": "dummy application"})))
             .with_body(r#"{"id":"app_2dSZgxc6qw0vR7hwZVXDJFleRXj","name":"dummy application"}"#)
             .with_header("content-type", "application/json")

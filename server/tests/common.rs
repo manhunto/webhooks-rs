@@ -136,7 +136,7 @@ impl TestServer {
     }
 
     fn base_url(&self) -> String {
-        format!("{}/v1", self.server_url)
+        self.server_url.to_string()
     }
 
     #[allow(dead_code)]
