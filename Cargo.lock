@@ -3654,6 +3654,7 @@ dependencies = [
  "futures",
  "rand",
  "sdk",
+ "serde_json",
  "tokio",
 ]
 

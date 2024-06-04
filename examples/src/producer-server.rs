@@ -1,6 +1,7 @@
 use std::env;
 
 use dotenv::dotenv;
+use serde_json::json;
 
 use sdk::error::Error;
 use sdk::WebhooksSDK;
@@ -18,12 +19,23 @@ async fn main() -> Result<(), Error> {
 
     println!("App created - {:?}", app);
 
+    let topic = "contact.created";
     let endpoint = sdk
         .endpoints()
-        .create(&app.id, "http://localhost:8080", vec!["contact.created"])
+        .create(&app.id, "http://localhost:8080", vec![topic])
         .await?;
 
     println!("Endpoint created - {:?}", endpoint);
+
+    let payload = json!({
+        "foo": {
+            "bar": "baz"
+        }
+    });
+
+    let event = sdk.events().create(&app.id, topic, &payload).await?;
+
+    println!("Event created - {:?}", event);
 
     Ok(())
 }
