@@ -32,8 +32,8 @@ an application that is high-performing, configurable and scalable.
 - [x] Endpoint can be disabled manually
 - [x] Circuit breaker
 - [x] Persistence
-- [ ] SDK
-- [ ] CLI
+- [x] SDK Beta
+- [ ] CLI Beta
 - [ ] Dockerized
 - [ ] Documentation
 - [x] Integration tests
