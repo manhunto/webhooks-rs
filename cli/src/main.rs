@@ -92,9 +92,14 @@ async fn main() {
                 url,
                 topics,
             } => {
-                println!("{}", app_id);
-                println!("{}", url);
-                println!("{:?}", topics);
+                let topics_str = topics.iter().map(|s| s.as_str()).collect();
+                let endpoint = sdk
+                    .endpoints()
+                    .create(&app_id, &url, topics_str)
+                    .await
+                    .unwrap();
+
+                println!("Endpoint {} has been created", endpoint.id);
             }
         },
         Command::Event { subcommand } => match subcommand {
@@ -103,9 +108,13 @@ async fn main() {
                 topic,
                 payload,
             } => {
-                println!("{}", app_id);
-                println!("{}", topic);
-                println!("{}", payload);
+                let event = sdk
+                    .events()
+                    .create(&app_id, &topic, &payload)
+                    .await
+                    .unwrap();
+
+                println!("Event {} has been created", event.id);
             }
         },
     };
