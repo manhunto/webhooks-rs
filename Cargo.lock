@@ -770,6 +770,7 @@ dependencies = [
  "clap",
  "dotenv",
  "sdk",
+ "serde_json",
  "tokio",
 ]
 

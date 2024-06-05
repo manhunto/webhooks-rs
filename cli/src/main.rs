@@ -2,6 +2,7 @@ use std::env;
 
 use clap::{Parser, Subcommand};
 use dotenv::dotenv;
+use serde_json::Value;
 
 use sdk::WebhooksSDK;
 
@@ -25,6 +26,11 @@ enum Command {
         #[clap(subcommand)]
         subcommand: EndpointSubcommand,
     },
+    /// Resource for events management
+    Event {
+        #[clap(subcommand)]
+        subcommand: EventSubcommand,
+    },
 }
 
 #[derive(Clone, Debug, Subcommand, PartialEq)]
@@ -45,6 +51,22 @@ enum EndpointSubcommand {
         #[arg(value_parser, num_args = 1.., value_delimiter = ',', required = true)]
         topics: Vec<String>,
     },
+}
+
+#[derive(Clone, Debug, Subcommand, PartialEq)]
+enum EventSubcommand {
+    Create {
+        app_id: String,
+        topic: String,
+        #[arg(help = "JSON payload", value_parser(parse_json_value))]
+        payload: Value,
+    },
+}
+
+fn parse_json_value(val: &str) -> Result<Value, String> {
+    let payload = serde_json::from_str(val).map_err(|e| e.to_string())?;
+
+    Ok(payload)
 }
 
 #[tokio::main]
@@ -75,17 +97,28 @@ async fn main() {
                 println!("{:?}", topics);
             }
         },
+        Command::Event { subcommand } => match subcommand {
+            EventSubcommand::Create {
+                app_id,
+                topic,
+                payload,
+            } => {
+                println!("{}", app_id);
+                println!("{}", topic);
+                println!("{}", payload);
+            }
+        },
     };
 }
 
 #[cfg(test)]
 mod test {
-    use clap::error::ErrorKind::MissingRequiredArgument;
     use clap::{CommandFactory, Parser};
+    use clap::error::ErrorKind::MissingRequiredArgument;
+    use serde_json::json;
 
-    use crate::Cli;
-    use crate::Command::Endpoint;
-    use crate::EndpointSubcommand::Create;
+    use crate::{Cli, EndpointSubcommand, EventSubcommand};
+    use crate::Command::{Endpoint, Event};
 
     #[test]
     fn verify_cli() {
@@ -119,7 +152,7 @@ mod test {
 
         let expected = Cli {
             command: Endpoint {
-                subcommand: Create {
+                subcommand: EndpointSubcommand::Create {
                     app_id: "app_2hRzcGs8D5aLaHBWHyqIcibuFA1".to_string(),
                     url: "http://localhost:8080".to_string(),
                     topics: vec!["contact.created".to_string()],
@@ -144,7 +177,7 @@ mod test {
 
         let expected = Cli {
             command: Endpoint {
-                subcommand: Create {
+                subcommand: EndpointSubcommand::Create {
                     app_id: "app_2hRzcGs8D5aLaHBWHyqIcibuFA1".to_string(),
                     url: "http://localhost:8080".to_string(),
                     topics: vec![
@@ -152,6 +185,35 @@ mod test {
                         "contact.updated".to_string(),
                         "contact.deleted".to_string(),
                     ],
+                },
+            },
+        };
+
+        assert!(result.is_ok());
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn event_create_handle_json() {
+        let result = Cli::try_parse_from([
+            "webhooks-cli",
+            "event",
+            "create",
+            "app_2hRzcGs8D5aLaHBWHyqIcibuFA1",
+            "contact.created",
+            "{\"foo\":{\"bar\":\"baz\"}}",
+        ]);
+
+        let expected = Cli {
+            command: Event {
+                subcommand: EventSubcommand::Create {
+                    app_id: "app_2hRzcGs8D5aLaHBWHyqIcibuFA1".to_string(),
+                    topic: "contact.created".to_string(),
+                    payload: json!({
+                        "foo": {
+                            "bar" : "baz"
+                        }
+                    }),
                 },
             },
         };
