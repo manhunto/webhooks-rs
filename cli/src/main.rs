@@ -113,12 +113,12 @@ async fn main() {
 
 #[cfg(test)]
 mod test {
-    use clap::{CommandFactory, Parser};
     use clap::error::ErrorKind::MissingRequiredArgument;
+    use clap::{CommandFactory, Parser};
     use serde_json::json;
 
-    use crate::{Cli, EndpointSubcommand, EventSubcommand};
     use crate::Command::{Endpoint, Event};
+    use crate::{Cli, EndpointSubcommand, EventSubcommand};
 
     #[test]
     fn verify_cli() {

@@ -7,6 +7,6 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
 dotenv = "0.15.0"
-serde_json = "1.0.117"
 sdk = { path = "../sdk" }
+serde_json = "1.0.117"
 tokio = { version = "1.38.0", features = ["full"] }
