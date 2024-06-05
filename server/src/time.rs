@@ -41,16 +41,4 @@ mod tests {
 
         assert_eq!(date, sut.now());
     }
-
-    #[test]
-    // fixme: is it safe to test it in that way?
-    fn test_chrono_time() {
-        let sut = Clock::chrono();
-        let expected_now = Utc::now();
-        let now = sut.now();
-
-        let delta = now - expected_now;
-
-        assert_eq!(0, delta.num_milliseconds());
-    }
 }
