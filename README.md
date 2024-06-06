@@ -50,15 +50,20 @@ an application that is high-performing, configurable and scalable.
 
 ## Domain explanation
 
-**Application** - TODO
+**Application** - Is a container that groups endpoints. In a multi-tenant architecture, it can be a separate tenant.
+Each application can have a separate configuration and secrets (in progress...).
 
-**Endpoint** - TODO
+**Endpoint** - This is the url of the server to which messages are sent. Each endpoint can be deactivated individually -
+either manually or automatically by the circuit breaker.
 
-**Event** - TODO
+**Event** - This is an event that originated in your system. The event has a topic and a payload. For now, it only
+supports JSON payload.
 
-**Message** - TODO
+**Message** - In a nutshell, it can be said to be an event for a given endpoint. A given event can be distributed to
+several endpoints.
 
-**Attempt** - TODO
+**Attempt** - This is a log of attempts to deliver a particular message. A given message may have multiple delivery
+attempts (e.g. endpoint is temporarily unavailable and message had to be retried by retry policy).
 
 ## ⚙️ How to use?
 
