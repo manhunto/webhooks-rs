@@ -70,18 +70,17 @@ fn parse_json_value(val: &str) -> Result<Value, String> {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
     let cli = Cli::parse();
-
     let url = env::var("SERVER_URL").expect("env SERVER_URL is not set");
-    let sdk = WebhooksSDK::new(url.as_str());
+    let sdk = WebhooksSDK::new(&url);
 
     match cli.command {
         Command::Application { subcommand } => match subcommand {
             ApplicationSubcommand::Create { name } => {
-                let app = sdk.application().create(name.as_str()).await.unwrap();
+                let app = sdk.application().create(name.as_str()).await?;
 
                 println!("App {} with name '{}' has been created", app.id, app.name);
             }
@@ -93,11 +92,7 @@ async fn main() {
                 topics,
             } => {
                 let topics_str = topics.iter().map(|s| s.as_str()).collect();
-                let endpoint = sdk
-                    .endpoints()
-                    .create(&app_id, &url, topics_str)
-                    .await
-                    .unwrap();
+                let endpoint = sdk.endpoints().create(&app_id, &url, topics_str).await?;
 
                 println!("Endpoint {} has been created", endpoint.id);
             }
@@ -108,16 +103,14 @@ async fn main() {
                 topic,
                 payload,
             } => {
-                let event = sdk
-                    .events()
-                    .create(&app_id, &topic, &payload)
-                    .await
-                    .unwrap();
+                let event = sdk.events().create(&app_id, &topic, &payload).await?;
 
                 println!("Event {} has been created", event.id);
             }
         },
     };
+
+    Ok(())
 }
 
 #[cfg(test)]
