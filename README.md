@@ -33,7 +33,7 @@ an application that is high-performing, configurable and scalable.
 - [x] Circuit breaker
 - [x] Persistence
 - [x] SDK Beta
-- [ ] CLI Beta
+- [x] CLI Beta
 - [ ] Dockerized
 - [ ] Documentation
 - [x] Integration tests
