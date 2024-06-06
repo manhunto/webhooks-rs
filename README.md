@@ -48,6 +48,67 @@ an application that is high-performing, configurable and scalable.
 - [ ] Data retention
 - [ ] Logging and monitoring
 
+## Domain explanation
+
+**Application** - TODO
+
+**Endpoint** - TODO
+
+**Event** - TODO
+
+**Message** - TODO
+
+**Attempt** - TODO
+
+## ⚙️ How to use?
+
+### Server
+
+Before run environment by using `just init`. This command run a docker and execute migrations. Server is split into two
+parts - server and dispatcher. Run `just rs` and `just rd`.
+
+Server has rest api interface. Example commands you can find in `server/server.http`. Please familiarise oneself
+with [Domain Explanation](#domain-explanation)
+
+### SDK
+
+> \[!IMPORTANT]
+>
+> SKD requires running server and dispatcher. See [Server](#server) section.
+
+You can find an example of the use of the sdk in the [examples/src/producer-server.rs](examples/src/producer-server.rs)
+
+### Cli
+
+> \[!IMPORTANT]
+>
+> Cli requires running server and dispatcher. See [Server](#server) section.
+
+To explore all possibilities run `cargo run --package=cli`. Cli is divided by resources sections.
+
+#### Create application
+
+```shell
+$ cargo run --package=cli application create "example application"
+App app_2hV5JuBgjMAQlDNNbepHTFnkicy with name 'example application' has been created
+```
+
+#### Create endpoint
+
+To create an endpoint in a recently created application
+
+```shell
+$ cargo run --package=cli endpoint create app_2hV5JuBgjMAQlDNNbepHTFnkicy http://localhost:8090/ contact.created,contact.updated
+Endpoint ep_2hV67JEIXUvFCN4bv43TUXVmX0s has been created
+```
+
+#### Create event
+
+```shell
+$ cargo run --package=cli event create app_2hV5JuBgjMAQlDNNbepHTFnkicy contact.created '{"foo":"bar"}'
+Event evt_2hV6UoIY9p6YnLmiawSvh4nh4Uf has been created
+```
+
 ## 👨‍💻 Development
 
 ### Prerequisites
