@@ -34,7 +34,6 @@ an application that is high-performing, configurable and scalable.
 - [x] Persistence
 - [x] SDK Beta
 - [x] CLI Beta
-- [ ] Dockerized
 - [ ] Documentation
 - [x] Integration tests
 - [ ] Error handling and validation
@@ -47,6 +46,7 @@ an application that is high-performing, configurable and scalable.
 - [ ] Distributed architecture
 - [ ] Data retention
 - [ ] Logging and monitoring
+- [ ] Dockerized
 
 ## Domain explanation
 
