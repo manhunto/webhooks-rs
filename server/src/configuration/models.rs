@@ -1,9 +1,29 @@
+use lazy_static::lazy_static;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
+use validator::{Validate, ValidationError};
 
 use crate::configuration::domain::{Application, Endpoint};
 
-#[derive(Deserialize)]
+fn is_not_empty(value: &str) -> Result<(), ValidationError> {
+    let value = value.trim();
+
+    if value.is_empty() {
+        return Err(ValidationError::new("is_empty"));
+    }
+
+    Ok(())
+}
+
+lazy_static! {
+    static ref AT_LEAST_ONE_ALPHA: Regex = Regex::new(r"(.|\s)*\S(.|\s)*").unwrap();
+}
+
+#[derive(Deserialize, Validate)]
 pub struct CreateAppRequest {
+    #[validate(
+        custom(function = is_not_empty, message = "Name cannot be empty")
+    )]
     pub name: String,
 }
 

@@ -1,6 +1,7 @@
 use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpResponse, Responder};
 use log::debug;
+use validator::Validate;
 
 use crate::configuration::domain::{Application, Endpoint, TopicsList};
 use crate::configuration::models::{
@@ -13,14 +14,18 @@ use crate::types::{ApplicationId, EndpointId};
 pub async fn create_application_handler(
     storage: Data<Storage>,
     request: Json<CreateAppRequest>,
-) -> impl Responder {
+) -> Result<impl Responder, ResponseError> {
+    if let Err(err) = request.validate() {
+        return Err(ResponseError::ValidationError(err));
+    }
+
     let app = Application::new(request.name.to_string());
 
     storage.applications.save(app.clone()).await;
 
     debug!("Application created: {:?}", app,);
 
-    HttpResponse::Created().json(CreateAppResponse::from(app))
+    Ok(HttpResponse::Created().json(CreateAppResponse::from(app)))
 }
 
 pub async fn create_endpoint_handler(

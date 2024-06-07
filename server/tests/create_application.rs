@@ -40,3 +40,53 @@ async fn application_is_created() {
 
     assert_eq!("Dummy application", app.name);
 }
+
+#[tokio::test]
+async fn application_names_can_be_without_space() {
+    // Arrange
+    let server = run_test_server!();
+
+    // Act
+    let response = Client::new()
+        .post(&server.url("application"))
+        .json(&json!({
+          "name": "test"
+        }))
+        .send()
+        .await
+        .expect("Failed to executed request");
+
+    // Assert
+    assert_eq!(201, response.status());
+}
+
+#[tokio::test]
+async fn validation() {
+    // Arrange
+    let server = run_test_server!();
+
+    let test_cases = vec![
+        (
+            json!({"name": ""}),
+            json!({"error": "Validation errors", "messages": ["Name cannot be empty"]}),
+        ),
+        (
+            json!({"name": "  "}),
+            json!({"error": "Validation errors", "messages": ["Name cannot be empty"]}),
+        ),
+    ];
+
+    for test_case in test_cases {
+        // Act
+        let response = Client::new()
+            .post(&server.url("application"))
+            .json(&test_case.0)
+            .send()
+            .await
+            .expect("Failed to executed request");
+
+        // Assert
+        assert_eq!(400, response.status());
+        assert_eq!(test_case.1, response.json::<Value>().await.unwrap());
+    }
+}

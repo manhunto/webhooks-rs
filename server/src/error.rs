@@ -5,6 +5,7 @@ use actix_web::http::StatusCode;
 use actix_web::HttpResponse;
 use serde_json::json;
 use sqlx::Error as SqlxError;
+use validator::{ValidationErrors, ValidationErrorsKind};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -18,6 +19,7 @@ pub enum ResponseError {
     NotFound(String),
     BadRequest(String),
     InternalError,
+    ValidationError(ValidationErrors),
 }
 
 impl Display for ResponseError {
@@ -25,6 +27,7 @@ impl Display for ResponseError {
         let msg = match self {
             ResponseError::NotFound(val) | ResponseError::BadRequest(val) => val,
             ResponseError::InternalError => "",
+            ResponseError::ValidationError(_) => "Validation errors",
         };
 
         write!(f, "{msg}")
@@ -37,15 +40,42 @@ impl actix_web::error::ResponseError for ResponseError {
             ResponseError::NotFound(_) => StatusCode::NOT_FOUND,
             ResponseError::BadRequest(_) => StatusCode::BAD_REQUEST,
             ResponseError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            ResponseError::ValidationError(_) => StatusCode::BAD_REQUEST,
         }
     }
 
     fn error_response(&self) -> HttpResponse {
-        let msg = self.to_string();
+        let error = self.to_string();
+
+        let messages: Vec<String> = match self {
+            ResponseError::NotFound(_)
+            | ResponseError::BadRequest(_)
+            | ResponseError::InternalError => Vec::<String>::new(),
+            ResponseError::ValidationError(errors) => {
+                let inner: Vec<Vec<String>> = errors
+                    .errors()
+                    .iter()
+                    .map(|e| match e.1 {
+                        ValidationErrorsKind::Field(err) => {
+                            err.iter().map(|e| e.to_string()).collect()
+                        }
+                        _ => unreachable!("this is error type is not handled yet"),
+                    })
+                    .collect();
+
+                inner.into_iter().flatten().collect()
+            }
+        };
 
         HttpResponse::build(self.status_code())
             .insert_header(ContentType::json())
-            .body(json!({"error": msg}).to_string())
+            .body(
+                json!({
+                    "error": error,
+                    "messages": messages
+                })
+                .to_string(),
+            )
     }
 }
 
