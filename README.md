@@ -48,7 +48,7 @@ an application that is high-performing, configurable and scalable.
 - [ ] Logging and monitoring
 - [ ] Dockerized
 
-## Domain explanation
+## 📚 Domain explanation
 
 **Application** - Is a container that groups endpoints. In a multi-tenant architecture, it can be a separate tenant.
 Each application can have a separate configuration and secrets (in progress...).
