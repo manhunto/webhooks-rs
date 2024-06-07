@@ -3,7 +3,7 @@ use serde_json::{json, Value};
 use url::Url;
 
 use server::configuration::domain::{EndpointStatus, TopicsList};
-use server::types::EndpointId;
+use server::types::{ApplicationId, EndpointId};
 
 use crate::common::{run_test_server, Given, TestEnvironment};
 
@@ -51,4 +51,31 @@ async fn endpoint_is_created() {
     assert_eq!(EndpointStatus::Initial, endpoint.status);
     assert_eq!(app_id, endpoint.app_id);
     assert_eq!(Url::parse("http://localhost:8080").unwrap(), endpoint.url);
+}
+
+#[tokio::test]
+async fn validation() {
+    // Arrange
+    let server = run_test_server!();
+
+    let test_cases = vec![(
+        ApplicationId::new(),
+        json!({"url": "http://localhost", "topics": ["contact.created"]}),
+        404,
+        json!({"error": "Entity not found", "messages": []}), // fixme: change for something like "Application not found"
+    )];
+
+    for test_case in test_cases {
+        // Act
+        let response = Client::new()
+            .post(&server.url(&format!("application/{}/endpoint", test_case.0)))
+            .json(&test_case.1)
+            .send()
+            .await
+            .expect("Failed to executed request");
+
+        // Assert
+        assert_eq!(test_case.2, response.status());
+        assert_eq!(test_case.3, response.json::<Value>().await.unwrap());
+    }
 }
