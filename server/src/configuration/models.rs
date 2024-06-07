@@ -15,10 +15,6 @@ fn is_not_empty(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-lazy_static! {
-    static ref AT_LEAST_ONE_ALPHA: Regex = Regex::new(r"(.|\s)*\S(.|\s)*").unwrap();
-}
-
 #[derive(Deserialize, Validate)]
 pub struct CreateAppRequest {
     #[validate(
