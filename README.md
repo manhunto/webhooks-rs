@@ -40,6 +40,8 @@ an application that is high-performing, configurable and scalable.
 
 ### Roadmap
 
+- [ ] Release bins (with GitHub action)
+- [ ] Sem ver
 - [ ] Rate-limit
 - [ ] Auth
 - [ ] Signed webhooks - server can verify that message was sent from valid server
