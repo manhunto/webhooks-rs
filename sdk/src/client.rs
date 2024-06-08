@@ -8,6 +8,7 @@ use serde::Serialize;
 use url::Url;
 
 use crate::error::Error;
+use crate::error::Error::BadRequest;
 
 #[derive(Clone)]
 pub struct Client {
@@ -30,6 +31,12 @@ impl Client {
     {
         let url = self.url(endpoint);
         let response = self.client.post(url).json(&body).send().await?;
+
+        if 400 == response.status().as_u16() {
+            let result = response.json::<crate::error::BadRequest>().await?;
+
+            return Err(BadRequest(result));
+        }
 
         Ok(response.json::<O>().await?)
     }

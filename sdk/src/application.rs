@@ -39,6 +39,7 @@ mod tests {
     use serde_json::json;
 
     use crate::application::Application;
+    use crate::error::Error;
     use crate::WebhooksSDK;
 
     #[tokio::test]
@@ -70,5 +71,36 @@ mod tests {
             },
             app
         );
+    }
+
+    #[tokio::test]
+    async fn can_handle_bad_request() {
+        let mut server = mockito::Server::new_async().await;
+        let url = server.url();
+
+        server
+            .mock("POST", "/application")
+            .match_body(Json(json!({"name": ""})))
+            .with_body(r#"{"error":"Validation error","messages":["Name cannot be empty"]}"#)
+            .with_header("content-type", "application/json")
+            .with_status(400)
+            .create_async()
+            .await;
+
+        let error = WebhooksSDK::new(url.as_str())
+            .application()
+            .create("")
+            .await
+            .err()
+            .unwrap();
+
+        match error {
+            Error::Reqwest(req) => panic!("is reqwest error {}", req),
+            Error::Unknown => panic!("is unknown error"),
+            Error::BadRequest(br) => {
+                assert_eq!("Validation error", br.error());
+                assert_eq!(vec!["Name cannot be empty"], br.messages());
+            }
+        }
     }
 }
