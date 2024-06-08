@@ -33,6 +33,10 @@ pub async fn create_endpoint_handler(
     request: Json<CreateEndpointRequest>,
     path: Path<String>,
 ) -> Result<impl Responder, ResponseError> {
+    if let Err(err) = request.validate() {
+        return Err(ResponseError::ValidationError(err));
+    }
+
     let app_id = ApplicationId::try_from(path.into_inner())?;
     let app = storage.applications.get(&app_id).await?;
 

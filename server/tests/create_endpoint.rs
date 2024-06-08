@@ -57,13 +57,52 @@ async fn endpoint_is_created() {
 async fn validation() {
     // Arrange
     let server = run_test_server!();
+    let app_id = Given::from(&server).app().await;
 
-    let test_cases = vec![(
-        ApplicationId::new(),
-        json!({"url": "http://localhost", "topics": ["contact.created"]}),
-        404,
-        json!({"error": "Entity not found", "messages": []}), // fixme: change for something like "Application not found"
-    )];
+    let test_cases = vec![
+        (
+            ApplicationId::new(),
+            json!({"url": "http://localhost", "topics": ["contact.created"]}),
+            404,
+            json!({"error": "Entity not found", "messages": []}), // fixme: change for something like "Application not found"
+        ),
+        (
+            app_id,
+            json!({"url": "", "topics": ["contact.created"]}),
+            400,
+            json!({"error": "Validation errors", "messages": ["Url should be valid"]}),
+        ),
+        (
+            app_id,
+            json!({"url": "invalid-url", "topics": ["contact.created"]}),
+            400,
+            json!({"error": "Validation errors", "messages": ["Url should be valid"]}),
+        ),
+        (
+            app_id,
+            json!({"url": "http://localhost", "topics": []}),
+            400,
+            json!({"error": "Validation errors", "messages": ["Should be at leas one topic"]}),
+        ),
+        (
+            app_id,
+            json!({"url": "http://localhost", "topics": ["foo bar"]}),
+            400,
+            json!({"error": "Validation errors", "messages": ["'foo bar' is invalid topic name"]}),
+        ),
+        (
+            app_id,
+            json!({"url": "http://localhost", "topics": ["foo.bar", "bar baz"]}),
+            400,
+            json!({"error": "Validation errors", "messages": ["'bar baz' is invalid topic name"]}),
+        ),
+        // (
+        //     app_id,
+        //     json!({"url": "http://localhost", "topics": ["foo bar", "bar baz"]}),
+        //     400,
+        //     json!({"error": "Validation errors", "messages": ["'foo bar' is invalid topic name", "'bar baz' is invalid topic name"]}),
+        // ),
+    ];
 
     for test_case in test_cases {
         // Act

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
-use crate::configuration::domain::{Application, Endpoint};
+use crate::configuration::domain::{Application, Endpoint, Topic};
 
 fn is_not_empty(value: &str) -> Result<(), ValidationError> {
     let value = value.trim();
@@ -13,11 +13,22 @@ fn is_not_empty(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
+fn topic_are_valid(value: &Vec<String>) -> Result<(), ValidationError> {
+    for v in value {
+        if Topic::try_from(v.as_str()).is_err() {
+            let err = ValidationError::new("invalid_topic_name")
+                .with_message(format!("'{}' is invalid topic name", v).into());
+
+            return Err(err);
+        }
+    }
+
+    Ok(())
+}
+
 #[derive(Deserialize, Validate)]
 pub struct CreateAppRequest {
-    #[validate(
-        custom(function = is_not_empty, message = "Name cannot be empty")
-    )]
+    #[validate(custom(function = is_not_empty, message = "Name cannot be empty"))]
     pub name: String,
 }
 
@@ -36,9 +47,12 @@ impl From<Application> for CreateAppResponse {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct CreateEndpointRequest {
+    #[validate(url(message = "Url should be valid"))]
     pub url: String,
+    #[validate(length(min = 1, message = "Should be at leas one topic"))]
+    #[validate(custom(function = topic_are_valid))]
     pub topics: Vec<String>,
 }
 
