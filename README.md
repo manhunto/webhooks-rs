@@ -34,9 +34,9 @@ an application that is high-performing, configurable and scalable.
 - [x] Persistence
 - [x] SDK Beta
 - [x] CLI Beta
-- [ ] Documentation
+- [x] Documentation
 - [x] Integration tests
-- [ ] Error handling and validation
+- [x] Error handling and validation (as POC)
 
 ### Roadmap
 
@@ -54,7 +54,7 @@ an application that is high-performing, configurable and scalable.
 Each application can have a separate configuration and secrets (in progress...).
 
 **Endpoint** - This is the url of the server to which messages are sent. Each endpoint can be deactivated individually -
-either manually or automatically by the circuit breaker.
+either manually or automatically by the circuit breaker. Endpoint can be only in one application.
 
 **Event** - This is an event that originated in your system. The event has a topic and a payload. For now, it only
 supports JSON payload.
