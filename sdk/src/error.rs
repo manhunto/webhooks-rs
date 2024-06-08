@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -9,7 +11,7 @@ pub enum Error {
     Reqwest(reqwest::Error),
     #[error("Unknown error")]
     Unknown,
-    #[error("Bad request")]
+    #[error("Bad request: {0}")]
     BadRequest(BadRequest),
 }
 
@@ -32,5 +34,11 @@ impl BadRequest {
 
     pub fn messages(&self) -> Vec<String> {
         self.messages.clone()
+    }
+}
+
+impl Display for BadRequest {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "error: {}, messages: {:?}", self.error(), self.messages)
     }
 }
