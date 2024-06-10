@@ -2,8 +2,8 @@ use std::time::{Duration, Instant};
 
 use log::debug;
 use reqwest::StatusCode;
-use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
+use sqlx::postgres::PgRow;
 use url::Url;
 
 use crate::events::domain::Payload;
@@ -33,9 +33,7 @@ impl FromRow<'_, PgRow> for Status {
 
 pub struct SentResult {
     pub status: Status,
-    #[allow(dead_code)]
     pub response_time: Duration,
-    #[allow(dead_code)]
     pub body: Option<String>,
 }
 

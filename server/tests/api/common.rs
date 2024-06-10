@@ -89,7 +89,6 @@ impl TestEnvironment {
             .await
     }
 
-    #[allow(dead_code)]
     pub async fn dispatcher(&self) {
         TestDispatcherBuilder::new(self.pool.clone(), self.amqp_config.clone())
             .run()
