@@ -40,7 +40,7 @@ an application that is high-performing, configurable and scalable.
 
 ### Roadmap
 
-- [ ] Release ask as crate and bins (with GitHub action)
+- [ ] Release sdk as crate and bins (with GitHub action)
 - [ ] Sem ver
 - [ ] Rate-limit
 - [ ] Auth
