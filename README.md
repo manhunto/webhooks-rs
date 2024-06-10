@@ -124,6 +124,16 @@ Event evt_2hV6UoIY9p6YnLmiawSvh4nh4Uf has been created
 - **[docker with docker-compose](https://www.docker.com/products/docker-desktop/)** - optional, if you want to set up
   the environment on your own
 
+### Troubleshoots
+
+#### 1. "Too many open files". during running tests
+
+``` 
+called `Result::unwrap()` on an `Err` value: Os { code: 24, kind: Uncategorized, message: "Too many open files" }
+```
+
+Execute (on linux) `ulimit -n 10000`
+
 ## 🤝 Contribution
 
 If you want to contribute to the growth of this project, please follow

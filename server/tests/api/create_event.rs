@@ -10,8 +10,6 @@ use crate::common::{
     assert_mock_with_retry, run_test_server_and_dispatcher, Given, TestEnvironment,
 };
 
-mod common;
-
 #[tokio::test]
 async fn event_is_created_and_dispatched() {
     // Arrange

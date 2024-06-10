@@ -4,8 +4,6 @@ use server::configuration::domain::EndpointStatus;
 
 use crate::common::{run_test_server, Given, TestEnvironment};
 
-mod common;
-
 const FAKE_URL: &str = "http://localhost:0";
 const FAKE_TOPIC: &str = "contact.created";
 

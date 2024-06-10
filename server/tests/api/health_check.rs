@@ -2,8 +2,6 @@ use reqwest::Client;
 
 use crate::common::{run_test_server, TestEnvironment};
 
-mod common;
-
 #[tokio::test]
 async fn health_check_works() {
     // Arrange

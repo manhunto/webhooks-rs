@@ -5,8 +5,6 @@ use server::types::ApplicationId;
 
 use crate::common::{run_test_server, TestEnvironment};
 
-mod common;
-
 #[tokio::test]
 async fn application_is_created() {
     // Arrange

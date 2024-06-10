@@ -139,7 +139,6 @@ impl TestServer {
         self.server_url.to_string()
     }
 
-    #[allow(dead_code)]
     pub fn storage(&self) -> &Storage {
         &self.storage
     }
@@ -164,14 +163,12 @@ impl TestDispatcherBuilder {
     }
 }
 
-#[allow(unused_macros)]
 macro_rules! run_test_server {
     () => {
         TestEnvironment::new().await.server().await
     };
 }
 
-#[allow(unused_macros)]
 macro_rules! run_test_server_and_dispatcher {
     () => {{
         let environment = TestEnvironment::new().await;
@@ -183,7 +180,6 @@ macro_rules! run_test_server_and_dispatcher {
     }};
 }
 
-#[allow(unused_macros)]
 macro_rules! assert_mock_with_retry {
     ($mock: ident) => {{
         let mut attempt: u8 = 1;
@@ -203,19 +199,14 @@ macro_rules! assert_mock_with_retry {
     }};
 }
 
-#[allow(unused_imports)]
 pub(crate) use assert_mock_with_retry;
-#[allow(unused_imports)]
 pub(crate) use run_test_server;
-#[allow(unused_imports)]
 pub(crate) use run_test_server_and_dispatcher;
 
-#[allow(dead_code)]
 pub struct Given {
     url: String,
 }
 
-#[allow(dead_code)]
 impl Given {
     fn new(url: String) -> Given {
         Self { url }

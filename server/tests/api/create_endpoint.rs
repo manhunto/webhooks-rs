@@ -7,8 +7,6 @@ use server::types::{ApplicationId, EndpointId};
 
 use crate::common::{run_test_server, Given, TestEnvironment};
 
-mod common;
-
 #[tokio::test]
 async fn endpoint_is_created() {
     // Arrange
