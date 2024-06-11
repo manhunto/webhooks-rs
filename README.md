@@ -126,13 +126,13 @@ Event evt_2hV6UoIY9p6YnLmiawSvh4nh4Uf has been created
 
 ### Troubleshoots
 
-#### 1. "Too many open files". during running tests
+#### 1. "Too many open files" during running tests
 
 ``` 
 called `Result::unwrap()` on an `Err` value: Os { code: 24, kind: Uncategorized, message: "Too many open files" }
 ```
 
-Execute (on linux) `ulimit -n 10000`
+Execute (on linux) `ulimit -n 10000` (default is 1024)
 
 ## 🤝 Contribution
 
