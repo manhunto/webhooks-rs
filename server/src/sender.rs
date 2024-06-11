@@ -2,8 +2,8 @@ use std::time::{Duration, Instant};
 
 use log::debug;
 use reqwest::StatusCode;
-use sqlx::{Error, FromRow, Row};
 use sqlx::postgres::PgRow;
+use sqlx::{Error, FromRow, Row};
 use url::Url;
 
 use crate::events::domain::Payload;

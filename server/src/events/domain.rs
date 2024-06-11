@@ -4,8 +4,8 @@ use std::time::Duration;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use sqlx::{Error, FromRow, Row};
 use sqlx::postgres::PgRow;
+use sqlx::{Error, FromRow, Row};
 
 use crate::configuration::domain::{Endpoint, Topic};
 use crate::sender::{SentResult, Status};
@@ -27,8 +27,8 @@ impl From<Value> for Payload {
 
 impl Serialize for Payload {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         let body: Value = serde_json::from_str(self.body.to_string().as_str()).unwrap();
 
