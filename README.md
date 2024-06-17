@@ -132,7 +132,7 @@ Event evt_2hV6UoIY9p6YnLmiawSvh4nh4Uf has been created
 called `Result::unwrap()` on an `Err` value: Os { code: 24, kind: Uncategorized, message: "Too many open files" }
 ```
 
-Execute (on linux) `ulimit -n 10000` (default is 1024)
+Execute (on linux/mac os) `ulimit -n 10000` (default is 1024)
 
 ## 🤝 Contribution
 
