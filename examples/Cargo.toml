@@ -13,7 +13,7 @@ name = "producer-server"
 path = "src/producer-server.rs"
 
 [dependencies]
-actix-web = "4.7.0"
+actix-web = "4.8.0"
 dotenv = "0.15.0"
 futures = "0.3.30"
 rand = "0.8.5"
