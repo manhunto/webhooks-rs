@@ -24,7 +24,7 @@ serde = { version = "1.0.204", features = ["derive"] }
 serde_json = { version = "1.0.120", features = ["raw_value"] }
 sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "chrono"] }
 svix-ksuid = { version = "^0.8.0", features = ["serde"] }
-tokio = { version = "1.38.0", features = ["full"] }
+tokio = { version = "1.38.1", features = ["full"] }
 url = "2.5.2"
 validator = { version = "0.18.1", features = ["derive"] }
 
