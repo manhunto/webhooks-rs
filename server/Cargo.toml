@@ -21,7 +21,7 @@ rand = "0.8.5"
 regex = "1.10.5"
 reqwest = { version = "0.12.5", features = ["json"] }
 serde = { version = "1.0.204", features = ["derive"] }
-serde_json = { version = "1.0.120", features = ["raw_value"] }
+serde_json = { version = "1.0.121", features = ["raw_value"] }
 sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "chrono"] }
 svix-ksuid = { version = "^0.8.0", features = ["serde"] }
 tokio = { version = "1.39.2", features = ["full"] }
