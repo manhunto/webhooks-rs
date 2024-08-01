@@ -30,7 +30,7 @@ validator = { version = "0.18.1", features = ["derive"] }
 
 [dev-dependencies]
 fake = "2.9.2"
-mockito = "1.4.0"
+mockito = "1.5.0"
 test-case = "3.3.1"
 
 [[bin]]
