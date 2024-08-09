@@ -9,7 +9,7 @@ async fn health_check_works() {
 
     // Act
     let response = Client::new()
-        .get(&server.url("health_check"))
+        .get(server.url("health_check"))
         .send()
         .await
         .expect("Failed to executed request");

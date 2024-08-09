@@ -17,7 +17,7 @@ async fn endpoint_can_be_disabled() {
 
     // Act
     let response = Client::new()
-        .post(&server.url(&format!(
+        .post(server.url(&format!(
             "application/{}/endpoint/{}/disable",
             app_id, endpoint_id
         )))
@@ -49,7 +49,7 @@ async fn endpoint_can_be_enabled() {
 
     // Act
     let response = Client::new()
-        .post(&server.url(&format!(
+        .post(server.url(&format!(
             "application/{}/endpoint/{}/enable",
             app_id, endpoint_id
         )))

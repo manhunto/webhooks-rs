@@ -93,7 +93,7 @@ macro_rules! make_ksuid {
         }
 
         impl sqlx::Decode<'_, sqlx::Postgres> for $name {
-            fn decode(value: <sqlx::Postgres as sqlx::database::HasValueRef<'_>>::ValueRef) -> Result<Self, sqlx::error::BoxDynError> {
+            fn decode(value: <sqlx::Postgres as sqlx::database::Database>::ValueRef<'_>) -> Result<Self, sqlx::error::BoxDynError> {
                 let value = <&str as sqlx::Decode<sqlx::Postgres>>::decode(value)?;
 
                 Ok(Self(value.as_bytes().try_into().unwrap()))
@@ -111,10 +111,10 @@ macro_rules! make_ksuid {
         }
 
         impl sqlx::Encode<'_, sqlx::Postgres> for $name {
-            fn encode_by_ref(&self, buf: &mut <sqlx::Postgres as sqlx::database::HasArguments<'_>>::ArgumentBuffer) -> sqlx::encode::IsNull {
+            fn encode_by_ref(&self, buf: &mut <sqlx::Postgres as sqlx::database::Database>::ArgumentBuffer<'_>) -> Result<sqlx::encode::IsNull, Box<(dyn serde::ser::StdError + Send + Sync + 'static)>> {
                 buf.extend(self.0);
 
-                sqlx::encode::IsNull::No
+                Ok(sqlx::encode::IsNull::No)
             }
         }
     };
