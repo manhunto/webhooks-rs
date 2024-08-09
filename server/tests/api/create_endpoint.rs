@@ -15,7 +15,7 @@ async fn endpoint_is_created() {
 
     // Act
     let response = Client::new()
-        .post(&server.url(&format!("application/{}/endpoint", app_id)))
+        .post(server.url(&format!("application/{}/endpoint", app_id)))
         .json(&json!({
           "url": "http://localhost:8080",
           "topics": [
@@ -105,7 +105,7 @@ async fn validation() {
     for test_case in test_cases {
         // Act
         let response = Client::new()
-            .post(&server.url(&format!("application/{}/endpoint", test_case.0)))
+            .post(server.url(&format!("application/{}/endpoint", test_case.0)))
             .json(&test_case.1)
             .send()
             .await

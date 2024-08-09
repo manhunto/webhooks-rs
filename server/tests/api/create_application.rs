@@ -12,7 +12,7 @@ async fn application_is_created() {
 
     // Act
     let response = Client::new()
-        .post(&server.url("application"))
+        .post(server.url("application"))
         .json(&json!({
           "name": "Dummy application"
         }))
@@ -46,7 +46,7 @@ async fn application_names_can_be_without_space() {
 
     // Act
     let response = Client::new()
-        .post(&server.url("application"))
+        .post(server.url("application"))
         .json(&json!({
           "name": "test"
         }))
@@ -77,7 +77,7 @@ async fn validation() {
     for test_case in test_cases {
         // Act
         let response = Client::new()
-            .post(&server.url("application"))
+            .post(server.url("application"))
             .json(&test_case.0)
             .send()
             .await

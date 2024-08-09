@@ -42,7 +42,7 @@ async fn event_is_created_and_dispatched() {
 
     // Act
     let response = Client::new()
-        .post(&server.url(&format!("application/{}/event", app_id)))
+        .post(server.url(&format!("application/{}/event", app_id)))
         .json(&json!({
           "topic": topic,
           "payload": payload
