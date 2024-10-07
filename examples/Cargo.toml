@@ -15,7 +15,7 @@ path = "src/producer-server.rs"
 [dependencies]
 actix-web = "4.9.0"
 dotenv = "0.15.0"
-futures = "0.3.30"
+futures = "0.3.31"
 rand = "0.8.5"
 sdk = { path = "../sdk" }
 serde_json = "1.0.128"
