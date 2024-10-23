@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.91"
-clap = { version = "4.5.19", features = ["derive"] }
+clap = { version = "4.5.20", features = ["derive"] }
 dotenv = "0.15.0"
 sdk = { path = "../sdk" }
 serde_json = "1.0.128"
