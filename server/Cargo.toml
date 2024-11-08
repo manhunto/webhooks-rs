@@ -29,7 +29,7 @@ url = "2.5.2"
 validator = { version = "0.19.0", features = ["derive"] }
 
 [dev-dependencies]
-fake = "3.0.0"
+fake = "3.0.1"
 mockito = "1.5.0"
 test-case = "3.3.1"
 
