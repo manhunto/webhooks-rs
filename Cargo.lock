@@ -448,7 +448,7 @@ dependencies = [
  "async-task",
  "concurrent-queue",
  "fastrand 2.1.0",
- "futures-lite 2.4.0",
+ "futures-lite 2.5.0",
  "slab",
 ]
 
@@ -463,7 +463,7 @@ dependencies = [
  "async-io 2.3.3",
  "async-lock 3.4.0",
  "blocking",
- "futures-lite 2.4.0",
+ "futures-lite 2.5.0",
  "once_cell",
 ]
 
@@ -508,7 +508,7 @@ dependencies = [
  "cfg-if",
  "concurrent-queue",
  "futures-io",
- "futures-lite 2.4.0",
+ "futures-lite 2.5.0",
  "parking",
  "polling 3.7.2",
  "rustix 0.38.34",
@@ -712,7 +712,7 @@ dependencies = [
  "async-channel",
  "async-task",
  "futures-io",
- "futures-lite 2.4.0",
+ "futures-lite 2.5.0",
  "piper",
 ]
 
@@ -1480,9 +1480,9 @@ dependencies = [
 
 [[package]]
 name = "futures-lite"
-version = "2.4.0"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f1fa2f9765705486b33fd2acf1577f8ec449c2ba1f318ae5447697b7c08d210"
+checksum = "cef40d21ae2c515b51041df9ed313ed21e572df340ea58a922a0aefe7e8891a1"
 dependencies = [
  "fastrand 2.1.0",
  "futures-core",
@@ -3256,7 +3256,7 @@ dependencies = [
  "envconfig",
  "fake",
  "futures",
- "futures-lite 2.4.0",
+ "futures-lite 2.5.0",
  "itertools 0.13.0",
  "lapin",
  "lazy_static",
