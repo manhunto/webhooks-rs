@@ -9,5 +9,5 @@ anyhow = "1.0.93"
 clap = { version = "4.5.20", features = ["derive"] }
 dotenv = "0.15.0"
 sdk = { path = "../sdk" }
-serde_json = "1.0.132"
+serde_json = "1.0.133"
 tokio = { version = "1.41.0", features = ["full"] }
